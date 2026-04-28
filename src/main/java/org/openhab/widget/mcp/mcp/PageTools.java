@@ -18,7 +18,7 @@ public class PageTools {
 
     @Tool(description = "Create or update a canvas layout page in OpenHAB that displays a custom widget. "
             + "The page will be a fixed canvas layout (800x600) containing the specified widget.")
-    String createOrUpdatePage(
+    public String createOrUpdatePage(
             @ToolArg(description = "Unique ID for the page, e.g. my_car_page") String uid,
             @ToolArg(description = "Display label for the page, e.g. Car Charging") String label,
             @ToolArg(description = "UID of the widget to embed in the page, e.g. RD_car_charging_widget") String widgetUid,
@@ -30,7 +30,7 @@ public class PageTools {
 
     @Tool(description = "Take a screenshot of an OpenHAB page as it appears in the browser. "
             + "Returns the absolute path to the saved PNG file.")
-    String screenshotPage(
+    public String screenshotPage(
             @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
         try {
             String path = browserService.screenshotPage(uid);
