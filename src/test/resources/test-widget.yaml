@@ -1,0 +1,19 @@
+uid: RD_test_widget
+component: f7-card
+config:
+  title: Test Widget
+  content: Hello from test
+props:
+  parameters:
+    - name: title
+      label: Title
+      type: TEXT
+      description: Card title
+    - name: content
+      label: Content
+      type: TEXT
+      description: Card content
+slots:
+  default: []
+tags:
+  - test

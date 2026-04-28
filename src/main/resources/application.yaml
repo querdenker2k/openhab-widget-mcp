@@ -1,0 +1,38 @@
+openhab:
+  url: http://localhost:8080
+  api-token: ""
+  username: ""
+  password: ""
+  output-dir: openhab-screenshots
+
+quarkus:
+  rest-client:
+    openhab:
+      url: ${openhab.url}
+      read-timeout: 30000
+      connect-timeout: 5000
+
+  mcp:
+    server:
+      server-info:
+        name: openhab-widget-mcp
+        version: 1.0.0
+
+  swagger-ui:
+    always-include: true
+    path: /q/swagger-ui
+
+  smallrye-openapi:
+    info-title: OpenHAB Widget MCP API
+    info-version: 1.0.0
+    info-description: REST API and MCP server for managing OpenHAB custom widgets and items
+
+  http:
+    port: 8081
+    test-port: 0
+
+  log:
+    level: INFO
+    category:
+      "org.openhab":
+        level: INFO
