@@ -11,6 +11,7 @@ import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -99,26 +100,22 @@ public class BrowserService {
             page.waitForTimeout(2000);
 
             String currentUrl = page.url();
-            Log.infof("After overview load, current URL: %s", currentUrl);
+            String currentPath = pathOf(currentUrl);
+            Log.infof("After overview load, current URL: %s (path: %s)", currentUrl, currentPath);
 
-            if (!currentUrl.contains("/overview") && !currentUrl.contains("/auth")) {
-                Log.info("Not on overview/auth page — assuming already authenticated");
-                loggedIn = true;
-                return;
+            // If we land directly on /auth (no overview shown), skip the login-button step.
+            // Otherwise (overview with login link), click the login button to reach /auth.
+            if (!"/auth".equals(currentPath)) {
+                Log.info("Not on /auth — clicking login button (a.button.color-gray) to reach auth");
+                try {
+                    page.click("a.button.color-gray", new Page.ClickOptions().setTimeout(5000));
+                    page.waitForURL(url -> "/auth".equals(pathOf(url)),
+                            new Page.WaitForURLOptions().setTimeout(15000));
+                } catch (Exception e) {
+                    Log.warnf("Could not reach /auth via login button: %s", e.getMessage());
+                    return; // loggedIn stays false → retried on next call
+                }
             }
-
-            Log.info("Clicking login button (a.button.color-gray)");
-            try {
-                page.click("a.button.color-gray", new Page.ClickOptions().setTimeout(5000));
-            } catch (Exception e) {
-                Log.warn("Login button (a.button.color-gray) not found — may already be logged in", e);
-                loggedIn = true;
-                return;
-            }
-
-            Log.info("Waiting for redirect to /auth");
-            page.waitForURL(url -> url.contains("/auth"),
-                    new Page.WaitForURLOptions().setTimeout(15000));
             Log.infof("Auth page reached: %s", page.url());
 
             Log.infof("Filling login form for user '%s'", username);
@@ -129,16 +126,29 @@ public class BrowserService {
             Log.info("Submitting login form");
             page.click("input[type='Submit']");
 
-            Log.info("Waiting for SPA to process auth code and complete login");
-            page.waitForURL(url -> !url.contains("/auth") && !url.contains("?code="),
+            Log.info("Waiting for SPA to process auth code and leave /auth");
+            page.waitForURL(url -> !"/auth".equals(pathOf(url)),
                     new Page.WaitForURLOptions().setTimeout(30000));
             page.waitForTimeout(2000);
             Log.infof("Login complete, current URL: %s", page.url());
 
             extractAccessToken();
+            if (accessToken.isBlank()) {
+                Log.warn("Login appeared to succeed but no access token was extracted");
+                return; // loggedIn stays false
+            }
             loggedIn = true;
         } catch (Exception e) {
             Log.warnf(e, "Login failed (%s), will retry on next call", e.getMessage());
+        }
+    }
+
+    private static String pathOf(String url) {
+        try {
+            String p = URI.create(url).getPath();
+            return p == null ? "" : p;
+        } catch (Exception e) {
+            return "";
         }
     }
 
@@ -188,26 +198,39 @@ public class BrowserService {
     }
 
     /**
-     * Navigates to targetUrl and verifies the browser actually landed there.
-     * If redirected to /overview/ or /auth (session expired), forces re-login and retries once.
+     * Navigates to targetUrl and verifies the browser actually landed on the expected path
+     * (not just a redirect to /auth or /overview where the URL string still contains the
+     * fragment via redirect_uri query params). Retries once after re-login if the path
+     * mismatches. Throws IllegalStateException if the path is still wrong after retry.
      */
-    private void navigateAuthenticated(Page p, String targetUrl, String expectedFragment) {
-        Log.infof("Navigating to: %s", targetUrl);
+    private void navigateAuthenticated(Page p, String targetUrl, String expectedPath) {
+        Log.infof("Navigating to: %s (expected path: %s)", targetUrl, expectedPath);
         p.navigate(targetUrl);
         p.waitForLoadState(LoadState.LOAD);
+        // SPA may redirect to /auth on its own after the initial load — give it a moment
+        p.waitForTimeout(1000);
         String currentUrl = p.url();
-        Log.infof("Landed on: %s", currentUrl);
-        if (!currentUrl.contains(expectedFragment)) {
-            Log.warnf("Expected URL fragment '%s' not found — session expired, re-logging in", expectedFragment);
+        String currentPath = pathOf(currentUrl);
+        Log.infof("Landed on: %s (path: %s)", currentUrl, currentPath);
+        if (!expectedPath.equals(currentPath)) {
+            Log.warnf("Path '%s' != expected '%s' — session likely expired, re-logging in", currentPath, expectedPath);
             loggedIn = false;
             login();
-            if (loggedIn) {
-                Log.infof("Re-login successful, retrying navigation to: %s", targetUrl);
-                p.navigate(targetUrl);
-                p.waitForLoadState(LoadState.LOAD);
-                Log.infof("Retry landed on: %s", p.url());
-            } else {
-                Log.warn("Re-login failed, proceeding anyway");
+            if (!loggedIn) {
+                throw new IllegalStateException(
+                        "Re-login failed while navigating to " + targetUrl + " — landed on " + currentUrl);
+            }
+            Log.infof("Re-login successful, retrying navigation to: %s", targetUrl);
+            p.navigate(targetUrl);
+            p.waitForLoadState(LoadState.LOAD);
+            p.waitForTimeout(1000);
+            currentUrl = p.url();
+            currentPath = pathOf(currentUrl);
+            Log.infof("Retry landed on: %s (path: %s)", currentUrl, currentPath);
+            if (!expectedPath.equals(currentPath)) {
+                throw new IllegalStateException(
+                        "Navigation to " + targetUrl + " failed — final URL " + currentUrl
+                                + " does not match expected path " + expectedPath);
             }
         }
     }
@@ -235,19 +258,20 @@ public class BrowserService {
         Path outputDir = Path.of(config.outputDir());
         Page p = getPage();
 
-        navigateAuthenticated(p, config.url() + "/page/" + uid, "/page/");
+        navigateAuthenticated(p, config.url() + "/page/" + uid, "/page/" + uid);
 
         Log.info("Waiting for page layout root to appear");
-        try {
-            p.waitForSelector(".oh-layout-page, [class*='page'], f7-page",
-                    new Page.WaitForSelectorOptions().setTimeout(15000));
-            Log.infof("Page layout root found, current URL: %s", p.url());
-        } catch (Exception e) {
-            Log.warn("Page layout root not found — falling back to timed wait (3s)", e);
-            p.waitForTimeout(3000);
-        }
+        p.waitForSelector(".oh-layout-page, [class*='page'], f7-page",
+                new Page.WaitForSelectorOptions().setTimeout(15000));
+        Log.infof("Page layout root found, current URL: %s", p.url());
         // Allow item state bindings to load and render after the DOM is ready
         p.waitForTimeout(3000);
+        // Guard against late SPA redirect to /auth (token expiry race)
+        String finalPath = pathOf(p.url());
+        if (!("/page/" + uid).equals(finalPath)) {
+            throw new IllegalStateException(
+                    "Page redirected away from /page/" + uid + " before screenshot — final path: " + finalPath);
+        }
 
         Files.createDirectories(outputDir);
         Path screenshotPath = outputDir.resolve("page_" + uid + ".png");
