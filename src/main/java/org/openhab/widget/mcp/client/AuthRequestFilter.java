@@ -1,6 +1,7 @@
 package org.openhab.widget.mcp.client;
 
 import io.quarkus.arc.Arc;
+import io.quarkus.logging.Log;
 import jakarta.ws.rs.client.ClientRequestContext;
 import jakarta.ws.rs.client.ClientRequestFilter;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -38,7 +39,9 @@ public class AuthRequestFilter implements ClientRequestFilter {
         // session. ensureToken() blocks if startup login is still in progress.
         try {
             BrowserService browserService = Arc.container().instance(BrowserService.class).get();
-            if (browserService == null) return;
+            if (browserService == null) {
+                return;
+            }
             String token = browserService.getAccessToken();
             if (token.isBlank()) {
                 token = browserService.ensureToken();
@@ -46,7 +49,8 @@ public class AuthRequestFilter implements ClientRequestFilter {
             if (!token.isBlank()) {
                 ctx.getHeaders().putSingle("Authorization", "Bearer " + token);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            Log.warn("Error getting OAuth2 access token from browser session", e);
             // No browser-derived token available — proceed without auth
         }
     }

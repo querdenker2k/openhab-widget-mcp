@@ -49,38 +49,38 @@ class PageToolsTest {
 
     @Test
     void createOrUpdatePage_newPage_returnsCreatedMessage() {
-        String result = pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{}");
+        String result = pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{}");
         assertThat(result).containsIgnoringCase("created successfully");
     }
 
     @Test
     void createOrUpdatePage_existingPage_returnsUpdatedMessage() {
-        pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{}");
-        String result = pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{}");
+        pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{}");
+        String result = pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{}");
         assertThat(result).containsIgnoringCase("updated successfully");
     }
 
     @Test
     void createOrUpdatePage_withPropsJson_works() {
-        String result = pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{\"title\":\"Test\"}");
+        String result = pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{\"title\":\"Test\"}");
         assertThat(result).containsIgnoringCase("created successfully");
     }
 
     @Test
     void createOrUpdatePage_withEmptyProps_works() {
-        String result = pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{}");
+        String result = pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{}");
         assertThat(result).doesNotContainIgnoringCase("error");
     }
 
     @Test
     void createOrUpdatePage_withNullProps_works() {
-        String result = pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, null);
+        String result = pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, null);
         assertThat(result).doesNotContainIgnoringCase("error");
     }
 
     @Test
     void screenshotPage_existingPage_capturesActualPageNotLoginScreen() throws Exception {
-        pageTools.createOrUpdatePage(PAGE_UID, "Test Page", WIDGET_UID, "{}");
+        pageTools.createTestPageForWidget(PAGE_UID, "Test Page", WIDGET_UID, "{}");
 
         String result = pageTools.screenshotPage(PAGE_UID);
 
@@ -105,8 +105,8 @@ class PageToolsTest {
 
     @Test
     void screenshotPage_differentPages_produceDifferentScreenshots() throws Exception {
-        pageTools.createOrUpdatePage(PAGE_UID, "Page A Title", WIDGET_UID, "{}");
-        pageTools.createOrUpdatePage(PAGE_UID_B, "Page B Title", WIDGET_UID, "{}");
+        pageTools.createTestPageForWidget(PAGE_UID, "Page A Title", WIDGET_UID, "{}");
+        pageTools.createTestPageForWidget(PAGE_UID_B, "Page B Title", WIDGET_UID, "{}");
 
         Path pathA = extractPath(pageTools.screenshotPage(PAGE_UID));
         Path pathB = extractPath(pageTools.screenshotPage(PAGE_UID_B));

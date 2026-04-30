@@ -27,6 +27,8 @@ public class WidgetService {
 
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     private final ObjectMapper jsonMapper = new ObjectMapper();
+    @Inject
+    BrowserService browserService;
 
     private Response safeInvoke(Supplier<Response> call) {
         try {
@@ -109,6 +111,8 @@ public class WidgetService {
                 if (status == 200 || status == 201) {
                     Log.infof("createOrUpdateWidgetFromYaml: created '%s' HTTP %d", uid, status);
                     return "Widget '" + uid + "' created successfully";
+                } else if (status == 401) {
+                    browserService.ensureToken();
                 }
                 String err = createResponse.readEntity(String.class);
                 Log.warnf("createOrUpdateWidgetFromYaml: create failed for '%s' HTTP %d: %s", uid, status, err);
