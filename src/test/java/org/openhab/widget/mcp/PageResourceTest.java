@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 
 @QuarkusTest
 @QuarkusTestResource(OpenHabTestResource.class)
@@ -16,6 +17,7 @@ class PageResourceTest {
     private static final String PAGE_UID = "test_page";
     // Widget UID only used as a reference in page config; widget need not exist in OpenHAB
     private static final String WIDGET_UID = "RD_test_widget";
+    private static final String DEFAULT_TEST_PAGE_UID = WIDGET_UID;
 
     private static final String PAGE_REQUEST = """
             {"uid":"%s","label":"Test Page","widgetUid":"%s","propsJson":"{}"}
@@ -23,12 +25,15 @@ class PageResourceTest {
 
     @BeforeEach
     void setUp() {
-        deletePage();
+        deletePage(PAGE_UID);
+        deletePage(DEFAULT_TEST_PAGE_UID);
     }
 
     @AfterEach
     void tearDown() {
-        deletePage();
+        deletePage(PAGE_UID);
+        deletePage(DEFAULT_TEST_PAGE_UID);
+        deletePage("custom_test_page");
     }
 
     @Test
@@ -59,10 +64,48 @@ class PageResourceTest {
                 .body("message", containsString("updated successfully"));
     }
 
-    private void deletePage() {
+    @Test
+    void createTestPage_withDefaults_createsPageAndReturnsUrl() {
+        given()
+                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .then()
+                .statusCode(200)
+                .body("message", containsString("created successfully"))
+                .body("pageUid", containsString(DEFAULT_TEST_PAGE_UID))
+                .body("pageUrl", containsString("/page/" + DEFAULT_TEST_PAGE_UID));
+    }
+
+    @Test
+    void createTestPage_calledTwice_updatesExistingPage() {
+        given()
+                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .then().statusCode(200);
+
+        given()
+                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .then()
+                .statusCode(200)
+                .body("message", containsString("updated successfully"))
+                .body("pageUid", containsString(DEFAULT_TEST_PAGE_UID));
+    }
+
+    @Test
+    void createTestPage_withCustomLabelAndPageUidAndProps_appliesThem() {
+        given()
+                .queryParam("label", "Custom Label")
+                .queryParam("pageUid", "custom_test_page")
+                .queryParam("propsJson", "{\"title\":\"Foo\"}")
+                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .then()
+                .statusCode(200)
+                .body("pageUid", is("custom_test_page"))
+                .body("pageUrl", containsString("/page/custom_test_page"));
+    }
+
+    private void deletePage(String uid) {
         given()
                 .baseUri(OpenHabTestResource.openHabUrl)
                 .header("Authorization", "Bearer " + OpenHabTestResource.accessToken)
-                .when().delete("/rest/ui/components/ui:page/" + PAGE_UID);
+                .when().delete("/rest/ui/components/ui:page/" + uid);
     }
 }

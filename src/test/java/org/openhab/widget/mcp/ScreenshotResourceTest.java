@@ -1,7 +1,12 @@
 package org.openhab.widget.mcp;
 
+import com.github.romankh3.image.comparison.ImageComparison;
+import com.github.romankh3.image.comparison.ImageComparisonUtil;
+import com.github.romankh3.image.comparison.model.ImageComparisonResult;
+import com.github.romankh3.image.comparison.model.ImageComparisonState;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.config.HttpClientConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,18 +18,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import io.restassured.config.HttpClientConfig;
-
 import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  * Integration test for screenshot endpoints using a real OpenHAB instance.
  *
- * On the first run reference screenshots are created automatically in
- * src/test/resources/screenshots/ — commit those files so future runs
- * compare against them. Delete a file to regenerate its reference.
+ * <p>Each test renders a screenshot and compares it to a reference PNG in
+ * {@code src/test/resources/screenshots/} via the {@code image-comparison} library.
+ * On the first run the reference is auto-created; commit the file so future runs
+ * compare against it. Delete a reference file to regenerate. On mismatch, the
+ * actual screenshot and a diff image (with differences highlighted in red) are
+ * written next to the reference for debugging.
  */
 @QuarkusTest
 @QuarkusTestResource(OpenHabTestResource.class)
@@ -35,7 +42,8 @@ class ScreenshotResourceTest {
     static final String TEST_ITEM = "ScreenshotTestItem";
     static final String TEST_ITEM_STATE = "ItemValueXYZ";
 
-    private static final double MAX_PIXEL_DIFF_RATIO = 0.10;
+    /** Maximum percentage of differing pixels (0-100) tolerated vs. the reference. */
+    private static final double MAX_DIFF_PERCENT = 10.0;
     private static final Path REFERENCE_DIR = Path.of("src/test/resources/screenshots");
 
     @BeforeEach
@@ -111,108 +119,28 @@ class ScreenshotResourceTest {
     }
 
     @Test
-    void screenshotWidget_isValidPngMatchingReference() throws IOException {
-        byte[] png = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", "{}")
-                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
-                .then()
-                .statusCode(200)
-                .contentType("image/png")
-                .extract().asByteArray();
-
+    void screenshotWidget_default_matchesReference() throws IOException {
+        byte[] png = screenshotWidget("{}");
         assertValidPng(png);
         assertMatchesReference(png, "widget_" + WIDGET_UID + ".png");
     }
 
     @Test
-    void screenshotWidget_withCustomTitleProp_differsFromDefault() throws IOException {
-        byte[] defaultPng = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", "{}")
-                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
-                .then().statusCode(200).extract().asByteArray();
-
-        byte[] customPng = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", "{\"title\":\"PropsTestCustomTitleXYZ\"}")
-                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
-                .then().statusCode(200).extract().asByteArray();
-
-        BufferedImage def = ImageIO.read(new ByteArrayInputStream(defaultPng));
-        BufferedImage cust = ImageIO.read(new ByteArrayInputStream(customPng));
-        assertThat(def.getWidth()).isEqualTo(cust.getWidth());
-        assertThat(def.getHeight()).isEqualTo(cust.getHeight());
-
-        // Title is rendered in the preview pane on the right side, top portion of the screen.
-        // Restrict the diff check to that region so unrelated chrome differences don't pollute.
-        long differing = 0;
-        long total = 0;
-        int x0 = (int) (def.getWidth() * 0.5);
-        int y0 = 0;
-        int yEnd = Math.min(150, def.getHeight());
-        for (int y = y0; y < yEnd; y++) {
-            for (int x = x0; x < def.getWidth(); x++) {
-                if (def.getRGB(x, y) != cust.getRGB(x, y)) differing++;
-                total++;
-            }
-        }
-        double ratio = (double) differing / total;
-        assertThat(ratio)
-                .as("Title region should change when custom title prop is applied (diff %.4f)", ratio)
-                .isGreaterThan(0.005);
+    void screenshotWidget_withCustomTitleProp_matchesReference() throws IOException {
+        byte[] png = screenshotWidget("{\"title\":\"PropsTestCustomTitleXYZ\"}");
+        assertValidPng(png);
+        assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_title.png");
     }
 
     @Test
-    void screenshotWidget_withItemProp_showsItemState() throws IOException {
-        byte[] defaultPng = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", "{}")
-                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
-                .then().statusCode(200).extract().asByteArray();
-
-        byte[] withItemPng = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig()
-                        .setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", "{\"statusItem\":\"" + TEST_ITEM + "\"}")
-                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
-                .then().statusCode(200).extract().asByteArray();
-
-        BufferedImage def = ImageIO.read(new ByteArrayInputStream(defaultPng));
-        BufferedImage withItem = ImageIO.read(new ByteArrayInputStream(withItemPng));
-        assertThat(def.getWidth()).isEqualTo(withItem.getWidth());
-        assertThat(def.getHeight()).isEqualTo(withItem.getHeight());
-
-        // The card content sits in the right preview pane below the title (~y 80-200, x 1100..1900).
-        // Default content: "Hello screenshot". With item prop set: "ItemValueXYZ". They MUST differ.
-        long differing = 0;
-        long total = 0;
-        int x0 = (int) (def.getWidth() * 0.5);
-        int y0 = 80;
-        int yEnd = Math.min(200, def.getHeight());
-        for (int y = y0; y < yEnd; y++) {
-            for (int x = x0; x < def.getWidth(); x++) {
-                if (def.getRGB(x, y) != withItem.getRGB(x, y)) differing++;
-                total++;
-            }
-        }
-        double ratio = (double) differing / total;
-        assertThat(ratio)
-                .as("Content area should change when item prop is applied (diff %.4f)", ratio)
-                .isGreaterThan(0.005);
+    void screenshotWidget_withItemProp_matchesReference() throws IOException {
+        byte[] png = screenshotWidget("{\"statusItem\":\"" + TEST_ITEM + "\"}");
+        assertValidPng(png);
+        assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_item.png");
     }
 
     @Test
-    void screenshotPage_isValidPngMatchingReference() throws IOException {
+    void screenshotPage_matchesReference() throws IOException {
         byte[] png = given()
                 .config(config().httpClient(HttpClientConfig.httpClientConfig()
                         .setParam("http.socket.timeout", 120_000)
@@ -225,6 +153,19 @@ class ScreenshotResourceTest {
 
         assertValidPng(png);
         assertMatchesReference(png, "page_" + PAGE_UID + ".png");
+    }
+
+    private static byte[] screenshotWidget(String propsJson) {
+        return given()
+                .config(config().httpClient(HttpClientConfig.httpClientConfig()
+                        .setParam("http.socket.timeout", 120_000)
+                        .setParam("http.connection.timeout", 30_000)))
+                .queryParam("props", propsJson)
+                .when().get("/api/widgets/" + WIDGET_UID + "/screenshot")
+                .then()
+                .statusCode(200)
+                .contentType("image/png")
+                .extract().asByteArray();
     }
 
     private static void assertValidPng(byte[] bytes) throws IOException {
@@ -241,8 +182,9 @@ class ScreenshotResourceTest {
     }
 
     /**
-     * Golden-file comparison. Creates the reference on first run; compares on all subsequent runs.
-     * Delete the reference file to regenerate it.
+     * Reference comparison via romankh3/image-comparison. Creates the reference on first run;
+     * on mismatch writes the actual screenshot and a diff image (red rectangles around changed
+     * regions) next to the reference and fails with the diff percent.
      */
     private static void assertMatchesReference(byte[] currentBytes, String fileName) throws IOException {
         Path referenceFile = REFERENCE_DIR.resolve(fileName);
@@ -257,27 +199,21 @@ class ScreenshotResourceTest {
         BufferedImage reference = ImageIO.read(referenceFile.toFile());
         BufferedImage current = ImageIO.read(new ByteArrayInputStream(currentBytes));
 
-        assertThat(current.getWidth())
-                .as("Screenshot width should match reference")
-                .isEqualTo(reference.getWidth());
-        assertThat(current.getHeight())
-                .as("Screenshot height should match reference")
-                .isEqualTo(reference.getHeight());
+        ImageComparisonResult result = new ImageComparison(reference, current)
+                .setAllowingPercentOfDifferentPixels(MAX_DIFF_PERCENT)
+                .compareImages();
 
-        long totalPixels = (long) reference.getWidth() * reference.getHeight();
-        long differentPixels = 0;
-        for (int y = 0; y < reference.getHeight(); y++) {
-            for (int x = 0; x < reference.getWidth(); x++) {
-                if (reference.getRGB(x, y) != current.getRGB(x, y)) {
-                    differentPixels++;
-                }
-            }
+        if (result.getImageComparisonState() != ImageComparisonState.MATCH) {
+            String stem = fileName.endsWith(".png") ? fileName.substring(0, fileName.length() - 4) : fileName;
+            Path diffFile = referenceFile.resolveSibling(stem + ".diff.png");
+            Path actualFile = referenceFile.resolveSibling(stem + ".actual.png");
+            ImageComparisonUtil.saveImage(diffFile.toFile(), result.getResult());
+            Files.write(actualFile, currentBytes);
+            fail("Screenshot does not match reference '%s' (state=%s, diff=%.2f%%, limit=%.1f%%). "
+                            + "Actual saved to '%s', diff to '%s'.",
+                    fileName, result.getImageComparisonState(),
+                    result.getDifferencePercent(), MAX_DIFF_PERCENT,
+                    actualFile, diffFile);
         }
-
-        double diffRatio = (double) differentPixels / totalPixels;
-        assertThat(diffRatio)
-                .as("Pixel difference ratio vs reference '%s' (%.1f%% differs, limit %.0f%%)",
-                        fileName, diffRatio * 100, MAX_PIXEL_DIFF_RATIO * 100)
-                .isLessThanOrEqualTo(MAX_PIXEL_DIFF_RATIO);
     }
 }

@@ -25,6 +25,8 @@ class PageToolsTest {
     private static final String PAGE_UID_B = "mcp_tools_test_page_b";
     // Widget reference in page config — widget need not exist in OpenHAB
     private static final String WIDGET_UID = "RD_nonexistent_ref_widget";
+    private static final String DEFAULT_TEST_PAGE_UID = WIDGET_UID;
+    private static final String CUSTOM_TEST_PAGE_UID = "mcp_custom_test_page";
 
     @Inject
     PageTools pageTools;
@@ -33,12 +35,16 @@ class PageToolsTest {
     void setUp() {
         deletePage(PAGE_UID);
         deletePage(PAGE_UID_B);
+        deletePage(DEFAULT_TEST_PAGE_UID);
+        deletePage(CUSTOM_TEST_PAGE_UID);
     }
 
     @AfterEach
     void tearDown() {
         deletePage(PAGE_UID);
         deletePage(PAGE_UID_B);
+        deletePage(DEFAULT_TEST_PAGE_UID);
+        deletePage(CUSTOM_TEST_PAGE_UID);
     }
 
     @Test
@@ -123,6 +129,52 @@ class PageToolsTest {
         assertThat(diffRatio)
                 .as("Screenshots of '%s' and '%s' should differ — ratio %.4f", PAGE_UID, PAGE_UID_B, diffRatio)
                 .isGreaterThan(0.0001);
+    }
+
+    @Test
+    void createTestPageForWidget_withDefaults_returnsSuccessAndPageUrl() {
+        String result = pageTools.createTestPageForWidget(WIDGET_UID, null, null, null);
+        assertThat(result).containsIgnoringCase("created successfully");
+        assertThat(result).contains("/page/" + DEFAULT_TEST_PAGE_UID);
+    }
+
+    @Test
+    void createTestPageForWidget_calledTwice_updatesExistingPage() {
+        pageTools.createTestPageForWidget(WIDGET_UID, null, null, null);
+        String result = pageTools.createTestPageForWidget(WIDGET_UID, null, null, null);
+        assertThat(result).containsIgnoringCase("updated successfully");
+    }
+
+    @Test
+    void createTestPageForWidget_withCustomArgs_appliesThem() {
+        String result = pageTools.createTestPageForWidget(
+                WIDGET_UID, "Custom Label", CUSTOM_TEST_PAGE_UID, "{\"title\":\"Foo\"}");
+        assertThat(result).containsIgnoringCase("created successfully");
+        assertThat(result).contains("/page/" + CUSTOM_TEST_PAGE_UID);
+    }
+
+    /**
+     * End-to-end: verify the page actually lands in OpenHAB with the right widget reference,
+     * label and props by reading it back through the OpenHAB REST API.
+     */
+    @Test
+    void createTestPageForWidget_pageIsActuallyPersistedInOpenHab() {
+        pageTools.createTestPageForWidget(
+                WIDGET_UID, "Persistence Check Label", null, "{\"title\":\"PersistedTitleXYZ\"}");
+
+        String body = given()
+                .baseUri(OpenHabTestResource.openHabUrl)
+                .header("Authorization", "Bearer " + OpenHabTestResource.accessToken)
+                .when().get("/rest/ui/components/ui:page/" + DEFAULT_TEST_PAGE_UID)
+                .then().statusCode(200).extract().asString();
+
+        assertThat(body)
+                .as("Page %s must exist and embed widget %s with the configured label and props",
+                        DEFAULT_TEST_PAGE_UID, WIDGET_UID)
+                .contains("\"uid\":\"" + DEFAULT_TEST_PAGE_UID + "\"")
+                .contains("widget:" + WIDGET_UID)
+                .contains("Persistence Check Label")
+                .contains("PersistedTitleXYZ");
     }
 
     private static Path extractPath(String toolResult) {
