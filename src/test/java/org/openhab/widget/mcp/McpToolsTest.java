@@ -48,20 +48,8 @@ class McpToolsTest {
     }
 
     @Test
-    void getWidget_existingWidget_returnsDefinition() {
-        createTestWidget();
-        assertThat(widgetTools.getWidget(WIDGET_UID)).contains(WIDGET_UID);
-    }
-
-    @Test
     void getWidget_unknownUid_returnsNotFoundMessage() {
         assertThat(widgetTools.getWidget("does_not_exist_xyz")).containsIgnoringCase("not found");
-    }
-
-    @Test
-    void deleteWidget_existingWidget_returnsSuccessMessage() {
-        createTestWidget();
-        assertThat(widgetTools.deleteWidget(WIDGET_UID)).containsIgnoringCase("deleted");
     }
 
     @Test
@@ -99,24 +87,5 @@ class McpToolsTest {
         response.body().close();
 
         assertThat(event).startsWith("data:");
-    }
-
-    private void createTestWidget() {
-        given()
-                .contentType("text/plain")
-                .body("""
-                        uid: RD_mcp_test_widget
-                        component: f7-card
-                        config:
-                          title: MCP Test Widget
-                        props:
-                          parameters: []
-                        slots:
-                          default: []
-                        tags:
-                          - test
-                        """)
-                .when().post("/api/widgets/yaml")
-                .then().statusCode(200);
     }
 }

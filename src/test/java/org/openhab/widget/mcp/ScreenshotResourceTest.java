@@ -12,6 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -201,6 +202,7 @@ class ScreenshotResourceTest {
 
         ImageComparisonResult result = new ImageComparison(reference, current)
                 .setAllowingPercentOfDifferentPixels(MAX_DIFF_PERCENT)
+                .setDifferenceRectangleColor(Color.RED)
                 .compareImages();
 
         if (result.getImageComparisonState() != ImageComparisonState.MATCH) {

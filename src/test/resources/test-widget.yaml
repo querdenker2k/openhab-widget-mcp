@@ -1,4 +1,4 @@
-uid: RD_test_widget
+uid: TestWidget
 component: f7-card
 config:
   title: Test Widget

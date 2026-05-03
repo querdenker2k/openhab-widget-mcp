@@ -39,7 +39,7 @@ public class OpenHabTestResource implements QuarkusTestResourceLifecycleManager 
         return Map.of(
                 "quarkus.rest-client.openhab.url", openHabUrl,
                 "openhab.url", openHabUrl,
-                "openhab.api-token", OpenHabTestResource.accessToken,
+                "openhab.api-token", accessToken,
                 "openhab.username", TEST_USER,
                 "openhab.password", TEST_PASSWORD
         );
@@ -86,30 +86,41 @@ public class OpenHabTestResource implements QuarkusTestResourceLifecycleManager 
                             .setHeadless(true)
                             .setArgs(List.of("--no-sandbox", "--disable-dev-shm-usage")));
             BrowserContext context = browser.newContext();
-            Page page = context.newPage();
+            int i = 0;
+            do {
+                try {
+                    Page page = context.newPage();
 
-            ObjectMapper mapper = new ObjectMapper();
-            page.onResponse(response -> {
-                if (response.url().contains("/rest/auth/token") && response.status() == 200) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        var body = mapper.readValue(response.text(), java.util.Map.class);
-                        token.set((String) body.get("access_token"));
-                    } catch (Exception ignored) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    page.onResponse(response -> {
+                        if (response.url().contains("/rest/auth/token") && response.status() == 200) {
+                            try {
+                                @SuppressWarnings("unchecked")
+                                var body = mapper.readValue(response.text(), Map.class);
+                                token.set((String) body.get("access_token"));
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    });
+
+                    page.navigate(openHabUrl + "/");
+                    page.waitForSelector("input[placeholder='User Name']",
+                            new Page.WaitForSelectorOptions().setTimeout(10000));
+                    page.fill("input[placeholder='User Name']", TEST_USER);
+                    page.fill("input[placeholder='Password']", TEST_PASSWORD);
+                    page.fill("input[placeholder='Confirm New Password']", TEST_PASSWORD);
+                    page.click("input[type='Submit']");
+                    page.waitForURL("**/setup-wizard/**", new Page.WaitForURLOptions().setTimeout(10000));
+                    page.navigate(openHabUrl + "/overview/");
+                    if (!page.url().equals(openHabUrl + "/overview/")) {
+                        throw new RuntimeException("Could not navigate to overview page");
                     }
+                    browser.close();
+                    break;
+                } catch (RuntimeException e) {
+                    i++;
                 }
-            });
-
-            page.navigate(openHabUrl + "/");
-            page.waitForSelector("input[placeholder='User Name']",
-                    new Page.WaitForSelectorOptions().setTimeout(90000));
-            page.fill("input[placeholder='User Name']", TEST_USER);
-            page.fill("input[placeholder='Password']", TEST_PASSWORD);
-            page.fill("input[placeholder='Confirm New Password']", TEST_PASSWORD);
-            page.click("input[type='Submit']");
-            page.waitForURL("**/setup-wizard/**", new Page.WaitForURLOptions().setTimeout(30000));
-
-            browser.close();
+            } while (i < 3);
         }
 
         if (token.get() == null) {
