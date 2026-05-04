@@ -80,7 +80,7 @@ public class BrowserService {
         return context.newPage();
     }
 
-    public void navigateAuthenticated(Page p, String targetUrl, String expectedPath) {
+    public synchronized void navigateAuthenticated(Page p, String targetUrl, String expectedPath) {
         Log.infof("Navigating to: %s (expected path: %s)", targetUrl, expectedPath);
 
         // Try to navigate first

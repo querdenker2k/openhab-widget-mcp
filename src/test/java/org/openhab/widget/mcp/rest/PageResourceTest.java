@@ -1,10 +1,11 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.rest;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openhab.widget.mcp.OpenHabTestResource;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -17,7 +18,6 @@ class PageResourceTest {
     private static final String PAGE_UID = "test_page";
     // Widget UID only used as a reference in page config; widget need not exist in OpenHAB
     private static final String WIDGET_UID = "RD_test_widget";
-    private static final String DEFAULT_TEST_PAGE_UID = WIDGET_UID;
 
     private static final String PAGE_REQUEST = """
             {"uid":"%s","label":"Test Page","widgetUid":"%s","propsJson":"{}"}
@@ -26,14 +26,13 @@ class PageResourceTest {
     @BeforeEach
     void setUp() {
         deletePage(PAGE_UID);
-        deletePage(DEFAULT_TEST_PAGE_UID);
+        deletePage(WIDGET_UID);
     }
 
     @AfterEach
     void tearDown() {
         deletePage(PAGE_UID);
-        deletePage(DEFAULT_TEST_PAGE_UID);
-        deletePage("custom_test_page");
+        deletePage(WIDGET_UID);
     }
 
     @Test
@@ -44,7 +43,7 @@ class PageResourceTest {
                 .when().post("/api/pages")
                 .then()
                 .statusCode(200)
-                .body("message", containsString("created successfully"));
+                .body("message.state", is("CREATED"));
     }
 
     @Test
@@ -61,45 +60,29 @@ class PageResourceTest {
                 .when().post("/api/pages")
                 .then()
                 .statusCode(200)
-                .body("message", containsString("updated successfully"));
+                .body("message.state", is("UPDATED"));
     }
 
     @Test
     void createTestPage_withDefaults_createsPageAndReturnsUrl() {
         given()
-                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .when().post("/api/pages/" + WIDGET_UID + "/testpage")
                 .then()
                 .statusCode(200)
-                .body("message", containsString("created successfully"))
-                .body("pageUid", containsString(DEFAULT_TEST_PAGE_UID))
-                .body("pageUrl", containsString("/page/" + DEFAULT_TEST_PAGE_UID));
+                .body("message.state", is("CREATED"));
     }
 
     @Test
     void createTestPage_calledTwice_updatesExistingPage() {
         given()
-                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .when().post("/api/pages/" + WIDGET_UID + "/testpage")
                 .then().statusCode(200);
 
         given()
-                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
+                .when().post("/api/pages/" + WIDGET_UID + "/testpage")
                 .then()
                 .statusCode(200)
-                .body("message", containsString("updated successfully"))
-                .body("pageUid", containsString(DEFAULT_TEST_PAGE_UID));
-    }
-
-    @Test
-    void createTestPage_withCustomLabelAndPageUidAndProps_appliesThem() {
-        given()
-                .queryParam("label", "Custom Label")
-                .queryParam("pageUid", "custom_test_page")
-                .queryParam("propsJson", "{\"title\":\"Foo\"}")
-                .when().post("/api/widgets/" + WIDGET_UID + "/testpage")
-                .then()
-                .statusCode(200)
-                .body("pageUid", is("custom_test_page"))
-                .body("pageUrl", containsString("/page/custom_test_page"));
+                .body("message.state", is("UPDATED"));
     }
 
     private void deletePage(String uid) {

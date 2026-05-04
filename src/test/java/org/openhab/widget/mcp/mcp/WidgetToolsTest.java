@@ -43,7 +43,7 @@ public class WidgetToolsTest {
 
             client.when()
                     .toolsList(page -> {
-                        Assertions.assertThat(page.size()).isEqualTo(10);
+                        Assertions.assertThat(page.size()).isEqualTo(11);
 
                         McpAssured.ToolInfo tool = page.findByName("listWidgets");
                         Assertions.assertThat(tool.description()).isEqualTo("List all custom widgets registered in OpenHAB. Returns a JSON array of widget definitions.");

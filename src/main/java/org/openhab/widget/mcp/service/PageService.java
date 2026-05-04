@@ -133,31 +133,35 @@ public class PageService {
     public synchronized String screenshotPage(String uid) throws IOException {
         Log.infof("screenshotPage: uid=%s", uid);
         Page p = browserService.createPage();
-        Path outputDir = Path.of(config.outputDir());
-        if (!Files.exists(outputDir)) {
-            Files.createDirectories(outputDir);
+        try {
+            Path outputDir = Path.of(config.outputDir());
+            if (!Files.exists(outputDir)) {
+                Files.createDirectories(outputDir);
+            }
+
+            String targetUrl = config.url() + "/page/" + uid;
+            String expectedPath = "/page/" + uid;
+
+            browserService.navigateAuthenticated(p, targetUrl, expectedPath);
+
+            Log.info("Waiting for page to settle");
+            p.waitForTimeout(3000);
+
+            Path outputPath = outputDir.resolve("page_" + uid + ".png");
+
+            Locator locator = p.locator(".oh-canvas-layout");
+
+            // 2. Screenshot des gesamten Frame-Inhalts (body) machen
+            locator.screenshot(new Locator.ScreenshotOptions()
+                    .setPath(outputPath));
+
+            Log.infof("Screenshot saved to: %s", outputPath.toAbsolutePath());
+            if (ImageUtil.isCompletelyWhite(outputPath, 0, true)) {
+                throw new IllegalStateException("Screenshot is completely white");
+            }
+            return outputPath.toAbsolutePath().toString();
+        } finally {
+            p.close();
         }
-
-        String targetUrl = config.url() + "/page/" + uid;
-        String expectedPath = "/page/" + uid;
-
-        browserService.navigateAuthenticated(p, targetUrl, expectedPath);
-
-        Log.info("Waiting for page to settle");
-        p.waitForTimeout(3000);
-
-        Path outputPath = outputDir.resolve("page_" + uid + ".png");
-
-        Locator locator = p.locator(".oh-canvas-layout");
-
-        // 2. Screenshot des gesamten Frame-Inhalts (body) machen
-        locator.screenshot(new Locator.ScreenshotOptions()
-                .setPath(outputPath));
-
-        Log.infof("Screenshot saved to: %s", outputPath.toAbsolutePath());
-        if (ImageUtil.isCompletelyWhite(outputPath, 0, true)) {
-            throw new IllegalStateException("Screenshot is completely white");
-        }
-        return outputPath.toAbsolutePath().toString();
     }
 }

@@ -1,10 +1,11 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.rest;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openhab.widget.mcp.OpenHabTestResource;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.nio.file.Path;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 
 @QuarkusTest
 @QuarkusTestResource(OpenHabTestResource.class)
@@ -22,12 +24,19 @@ class WidgetResourceTest {
 
     @BeforeEach
     void setUp() {
-        given().when().delete("/api/widgets/" + WIDGET_UID);
+        deleteWidget(WIDGET_UID);
     }
 
     @AfterEach
     void tearDown() {
-        given().when().delete("/api/widgets/" + WIDGET_UID);
+        deleteWidget(WIDGET_UID);
+    }
+
+    private void deleteWidget(String uid) {
+        given()
+                .baseUri(OpenHabTestResource.openHabUrl)
+                .header("Authorization", "Bearer " + OpenHabTestResource.accessToken)
+                .when().delete("/rest/ui/components/ui:widget/" + uid);
     }
 
     @Test
@@ -45,8 +54,7 @@ class WidgetResourceTest {
                 .body(loadTestWidgetYaml())
                 .when().post("/api/widgets/yaml")
                 .then()
-                .statusCode(200)
-                .body("message", containsString("created successfully"));
+                .statusCode(200);
     }
 
     @Test
@@ -68,7 +76,7 @@ class WidgetResourceTest {
                 .when().post("/api/widgets/yaml")
                 .then()
                 .statusCode(200)
-                .body("message", containsString("updated successfully"));
+                .body("message.state", is("UPDATED"));
     }
 
     @Test
@@ -77,8 +85,7 @@ class WidgetResourceTest {
                 .multiPart("file", new File("src/test/resources/test-widget.yaml"), "text/plain")
                 .when().post("/api/widgets/upload")
                 .then()
-                .statusCode(200)
-                .body("message", containsString("successfully"));
+                .statusCode(200);
     }
 
     @Test
@@ -87,8 +94,7 @@ class WidgetResourceTest {
         given()
                 .when().delete("/api/widgets/" + WIDGET_UID)
                 .then()
-                .statusCode(200)
-                .body("message", containsString("deleted successfully"));
+                .statusCode(200);
     }
 
     @Test

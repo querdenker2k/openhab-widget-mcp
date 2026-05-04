@@ -137,42 +137,45 @@ public class WidgetService {
 
     public record ParamInfo(String name, String label, String context) {}
 
-    public String screenshotWidget(String uid, String propsJson) throws IOException {
+    public synchronized String screenshotWidget(String uid, String propsJson) throws IOException {
         Log.infof("screenshotWidget: uid=%s, props=%s", uid, propsJson);
         Page editorPage = browserService.createPage();
+        try {
+            String expectedPath = "/developer/widgets/" + uid;
+            browserService.navigateAuthenticated(editorPage, config.url() + expectedPath, expectedPath);
 
-        String expectedPath = "/developer/widgets/" + uid;
-        browserService.navigateAuthenticated(editorPage, config.url() + expectedPath, expectedPath);
+            Log.info("Waiting for widget editor preview to render");
+            editorPage.waitForSelector(".widget-preview, .preview-pane, .f7-page",
+                    new Page.WaitForSelectorOptions().setTimeout(15000));
+            editorPage.waitForTimeout(2000);
 
-        Log.info("Waiting for widget editor preview to render");
-        editorPage.waitForSelector(".widget-preview, .preview-pane, .f7-page",
-                new Page.WaitForSelectorOptions().setTimeout(15000));
-        editorPage.waitForTimeout(2000);
+            if (propsJson != null && !propsJson.isBlank() && !propsJson.equals("{}")) {
+                applyPropsViaDialog(editorPage, uid, propsJson);
+            }
 
-        if (propsJson != null && !propsJson.isBlank() && !propsJson.equals("{}")) {
-            applyPropsViaDialog(editorPage, uid, propsJson);
+            String finalPath = pathOf(editorPage.url());
+            if (!expectedPath.equals(finalPath)) {
+                Log.warnf("Landed on %s instead of %s after applying props", finalPath, expectedPath);
+            }
+
+            Path outputDir = Path.of(config.outputDir());
+            Files.createDirectories(outputDir);
+            Path screenshotPath = outputDir.resolve("widget_" + uid + ".png");
+
+            Locator locator = editorPage.locator(".card");
+            locator.screenshot(new Locator.ScreenshotOptions()
+                    .setPath(screenshotPath));
+
+            Log.infof("Screenshot saved to: %s", screenshotPath.toAbsolutePath());
+
+            if (ImageUtil.isCompletelyWhite(screenshotPath, 0, true)) {
+                throw new IllegalStateException("Screenshot is completely white");
+            }
+
+            return screenshotPath.toAbsolutePath().toString();
+        } finally {
+            editorPage.close();
         }
-
-        String finalPath = pathOf(editorPage.url());
-        if (!expectedPath.equals(finalPath)) {
-            Log.warnf("Landed on %s instead of %s after applying props", finalPath, expectedPath);
-        }
-
-        Path outputDir = Path.of(config.outputDir());
-        Files.createDirectories(outputDir);
-        Path screenshotPath = outputDir.resolve("widget_" + uid + ".png");
-
-        Locator locator = editorPage.locator(".card");
-        locator.screenshot(new Locator.ScreenshotOptions()
-                .setPath(screenshotPath));
-
-        Log.infof("Screenshot saved to: %s", screenshotPath.toAbsolutePath());
-
-        if (ImageUtil.isCompletelyWhite(screenshotPath, 0, true)) {
-            throw new IllegalStateException("Screenshot is completely white");
-        }
-
-        return screenshotPath.toAbsolutePath().toString();
     }
 
     @SuppressWarnings("unchecked")
