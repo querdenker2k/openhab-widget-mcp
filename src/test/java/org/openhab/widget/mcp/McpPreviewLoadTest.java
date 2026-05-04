@@ -38,23 +38,19 @@ public class McpPreviewLoadTest {
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < count; i++) {
-                log.info("[DEBUG_LOG] MCP Sequential requesting widget screenshot " + i);
+                log.info("MCP Sequential requesting widget screenshot " + i);
                 client.when()
-                        .toolsCall("previewWidget", Map.of("uid", WIDGET_UID), response -> {
-                            assertThat(response.isError()).isFalse();
-                        })
+                        .toolsCall("previewWidget", Map.of("uid", WIDGET_UID), response -> assertThat(response.isError()).isFalse())
                         .thenAssertResults();
 
-                log.info("[DEBUG_LOG] MCP Sequential requesting page screenshot " + i);
+                log.info("MCP Sequential requesting page screenshot " + i);
                 client.when()
-                        .toolsCall("screenshotPage", Map.of("uid", PAGE_UID), response -> {
-                            assertThat(response.isError()).isFalse();
-                        })
+                        .toolsCall("screenshotPage", Map.of("uid", PAGE_UID), response -> assertThat(response.isError()).isFalse())
                         .thenAssertResults();
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            log.info("[DEBUG_LOG] MCP Sequential load test finished in " + duration + "ms");
+            log.info("MCP Sequential load test finished in " + duration + "ms");
             client.disconnect();
         }
     }
@@ -65,44 +61,25 @@ public class McpPreviewLoadTest {
         setupData();
 
         int count = 10;
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
         long startTime = System.currentTimeMillis();
 
-        for (int i = 0; i < count; i++) {
-            final int index = i;
-            futures.add(CompletableFuture.runAsync(() -> {
-                log.info("[DEBUG_LOG] MCP Parallel requesting widget screenshot " + index);
-                try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
-                    client.when()
-                            .toolsCall("previewWidget", Map.of("uid", WIDGET_UID), response -> {
-                                assertThat(response.isError()).isFalse();
-                            })
-                            .thenAssertResults();
-                    client.disconnect();
-                } catch (Exception e) {
-                    throw new RuntimeException("Widget screenshot " + index + " failed", e);
-                }
-            }));
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            for (int index = 0; index < count; index++) {
+                log.info("MCP Parallel requesting widget screenshot " + index);
+                client.when()
+                        .toolsCall("previewWidget", Map.of("uid", WIDGET_UID), response -> assertThat(response.isError()).isFalse())
+                        .thenAssertResults();
 
-            futures.add(CompletableFuture.runAsync(() -> {
-                log.info("[DEBUG_LOG] MCP Parallel requesting page screenshot " + index);
-                try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
-                    client.when()
-                            .toolsCall("screenshotPage", Map.of("uid", PAGE_UID), response -> {
-                                assertThat(response.isError()).isFalse();
-                            })
-                            .thenAssertResults();
-                    client.disconnect();
-                } catch (Exception e) {
-                    throw new RuntimeException("Page screenshot " + index + " failed", e);
-                }
-            }));
+                log.info("MCP Parallel requesting page screenshot " + index);
+                client.when()
+                        .toolsCall("screenshotPage", Map.of("uid", PAGE_UID), response -> assertThat(response.isError()).isFalse())
+                        .thenAssertResults();
+            }
+            client.disconnect();
         }
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-
         long duration = System.currentTimeMillis() - startTime;
-        log.info("[DEBUG_LOG] MCP Parallel load test finished in " + duration + "ms");
+        log.info("MCP Parallel load test finished in " + duration + "ms");
     }
 
     private void setupData() throws IOException {
@@ -111,7 +88,7 @@ public class McpPreviewLoadTest {
         String yaml = Files.readString(Path.of("src/test/resources/test-widget.yaml"));
         yaml = yaml.replace("uid: TestWidget", "uid: " + WIDGET_UID);
 
-        log.info("[DEBUG_LOG] Creating test widget " + WIDGET_UID);
+        log.info("Creating test widget " + WIDGET_UID);
         given()
                 .contentType("text/plain")
                 .body(yaml)
@@ -119,7 +96,7 @@ public class McpPreviewLoadTest {
                 .then().statusCode(200);
 
         // Create a page for testing
-        log.info("[DEBUG_LOG] Creating test page " + PAGE_UID);
+        log.info("Creating test page " + PAGE_UID);
         given()
                 .when().post("/api/pages/" + WIDGET_UID + "/testpage?pageUid=" + PAGE_UID)
                 .then().statusCode(200);

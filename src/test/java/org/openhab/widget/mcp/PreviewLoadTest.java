@@ -36,7 +36,7 @@ public class PreviewLoadTest {
         int count = 10; // 10 widget + 10 page = 20 total
         int port = RestAssured.port;
         String baseUrl = "http://localhost:" + port;
-        log.info("[DEBUG_LOG] Using base URL: " + baseUrl);
+        log.info("Using base URL: " + baseUrl);
 
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(java.time.Duration.ofSeconds(10))
@@ -46,7 +46,7 @@ public class PreviewLoadTest {
 
         for (int i = 0; i < count; i++) {
 
-            log.info("[DEBUG_LOG] Requesting widget screenshot " + i);
+            log.info("Requesting widget screenshot " + i);
             HttpRequest reqWidget = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/widgets/" + WIDGET_UID + "/screenshot"))
                     .GET()
@@ -57,7 +57,7 @@ public class PreviewLoadTest {
                 throw new RuntimeException("Widget screenshot " + i + " failed with status " + respWidget.statusCode());
             }
 
-            log.info("[DEBUG_LOG] Requesting page screenshot " + i);
+            log.info("Requesting page screenshot " + i);
             HttpRequest reqPage = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/pages/" + PAGE_UID + "/screenshot"))
                     .GET()
@@ -70,7 +70,7 @@ public class PreviewLoadTest {
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        log.info("[DEBUG_LOG] Sequential load test finished in " + duration + "ms");
+        log.info("Sequential load test finished in " + duration + "ms");
     }
 
     @Test
@@ -93,7 +93,7 @@ public class PreviewLoadTest {
             final int index = i;
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    log.info("[DEBUG_LOG] Parallel requesting widget screenshot " + index);
+                    log.info("Parallel requesting widget screenshot " + index);
                     HttpRequest req = HttpRequest.newBuilder()
                             .uri(URI.create(baseUrl + "/api/widgets/" + WIDGET_UID + "/screenshot"))
                             .GET()
@@ -101,18 +101,18 @@ public class PreviewLoadTest {
                             .build();
                     HttpResponse<Void> response = client.send(req, HttpResponse.BodyHandlers.discarding());
                     if (response.statusCode() != 200) {
-                        log.info("[DEBUG_LOG] Widget screenshot " + index + " failed with status " + response.statusCode());
+                        log.info("Widget screenshot " + index + " failed with status " + response.statusCode());
                     }
                     return response;
                 } catch (Exception e) {
-                    log.info("[DEBUG_LOG] Widget screenshot " + index + " failed with exception: " + e.getMessage());
+                    log.info("Widget screenshot " + index + " failed with exception: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
             }));
 
             futures.add(CompletableFuture.supplyAsync(() -> {
                 try {
-                    log.info("[DEBUG_LOG] Parallel requesting page screenshot " + index);
+                    log.info("Parallel requesting page screenshot " + index);
                     HttpRequest req = HttpRequest.newBuilder()
                             .uri(URI.create(baseUrl + "/api/pages/" + PAGE_UID + "/screenshot"))
                             .GET()
@@ -120,11 +120,11 @@ public class PreviewLoadTest {
                             .build();
                     HttpResponse<Void> response = client.send(req, HttpResponse.BodyHandlers.discarding());
                     if (response.statusCode() != 200) {
-                        log.info("[DEBUG_LOG] Page screenshot " + index + " failed with status " + response.statusCode());
+                        log.info("Page screenshot " + index + " failed with status " + response.statusCode());
                     }
                     return response;
                 } catch (Exception e) {
-                    log.info("[DEBUG_LOG] Page screenshot " + index + " failed with exception: " + e.getMessage());
+                    log.info("Page screenshot " + index + " failed with exception: " + e.getMessage());
                     throw new RuntimeException(e);
                 }
             }));
@@ -135,13 +135,13 @@ public class PreviewLoadTest {
         for (CompletableFuture<HttpResponse<Void>> future : futures) {
             HttpResponse<Void> response = future.join();
             if (response.statusCode() != 200) {
-                log.info("[DEBUG_LOG] Parallel request failed with status " + response.statusCode());
+                log.info("Parallel request failed with status " + response.statusCode());
                 throw new RuntimeException("Parallel request failed with status " + response.statusCode());
             }
         }
 
         long duration = System.currentTimeMillis() - startTime;
-        log.info("[DEBUG_LOG] Parallel load test finished in " + duration + "ms");
+        log.info("Parallel load test finished in " + duration + "ms");
     }
 
     private void setupData() throws IOException {
@@ -150,7 +150,7 @@ public class PreviewLoadTest {
         String yaml = Files.readString(Path.of("src/test/resources/test-widget.yaml"));
         yaml = yaml.replace("uid: TestWidget", "uid: " + WIDGET_UID);
         
-        log.info("[DEBUG_LOG] Creating test widget " + WIDGET_UID);
+        log.info("Creating test widget " + WIDGET_UID);
         given()
                 .contentType("text/plain")
                 .body(yaml)
@@ -158,7 +158,7 @@ public class PreviewLoadTest {
                 .then().statusCode(200);
 
         // Create a page for testing
-        log.info("[DEBUG_LOG] Creating test page " + PAGE_UID);
+        log.info("Creating test page " + PAGE_UID);
         given()
                 .when().post("/api/pages/" + WIDGET_UID + "/testpage?pageUid=" + PAGE_UID)
                 .then().statusCode(200);

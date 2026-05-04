@@ -1,6 +1,5 @@
 package org.openhab.widget.mcp.rest;
 
-import org.openhab.widget.mcp.config.OpenHabConfig;
 import org.openhab.widget.mcp.service.WidgetService;
 import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
@@ -99,6 +98,7 @@ public class WidgetResource {
                     .header("Content-Disposition", "inline; filename=\"" + uid + ".png\"")
                     .build();
         } catch (Exception e) {
+            Log.error("Error creating screenshot for widget " + uid, e);
             return Response.serverError()
                     .type(MediaType.APPLICATION_JSON)
                     .entity(Map.of("error", e.getMessage()))
