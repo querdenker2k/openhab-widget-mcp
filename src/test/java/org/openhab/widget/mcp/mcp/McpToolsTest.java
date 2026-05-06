@@ -1,4 +1,4 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.mcp;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -6,8 +6,7 @@ import io.restassured.RestAssured;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.openhab.widget.mcp.mcp.ItemTools;
-import org.openhab.widget.mcp.mcp.WidgetTools;
+import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 import java.net.URI;
 import java.net.http.HttpClient;

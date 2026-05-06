@@ -1,4 +1,4 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.rest;
 
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -6,6 +6,7 @@ import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 import java.io.IOException;
 import java.net.URI;

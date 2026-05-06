@@ -3,7 +3,7 @@ package org.openhab.widget.mcp.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.openhab.widget.mcp.client.OpenHabClient;
-import io.quarkus.logging.Log;
+import lombok.extern.slf4j.Slf4j;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+@Slf4j
 @ApplicationScoped
 public class ItemService {
 
@@ -32,7 +33,7 @@ public class ItemService {
     }
 
     public String listItems(String nameFilter) {
-        Log.infof("listItems: filter=%s", nameFilter);
+        log.info("listItems: filter={}", nameFilter);
         try {
             Response response = safeInvoke(openHabClient::listItems);
             int status = response.getStatus();
@@ -41,7 +42,7 @@ public class ItemService {
                 return "Error listing items: HTTP " + status + " — configure openhab.api-token for authenticated access";
             }
             if (nameFilter == null || nameFilter.isBlank()) {
-                Log.infof("listItems: HTTP %d, returning %d chars", status, body.length());
+                log.info("listItems: HTTP {}, returning {} chars", status, body.length());
                 return body;
             }
             List<Map<String, Object>> items = jsonMapper.readValue(body, new TypeReference<>() {});
@@ -52,51 +53,76 @@ public class ItemService {
                         return name.toLowerCase().contains(filter);
                     })
                     .toList();
-            Log.infof("listItems: HTTP %d, %d/%d items match filter '%s'", status, filtered.size(), items.size(), nameFilter);
+            log.info("listItems: HTTP {}, {}/{} items match filter '{}'", status, filtered.size(), items.size(), nameFilter);
             return jsonMapper.writeValueAsString(filtered);
         } catch (Exception e) {
-            Log.error("Error listing items", e);
+            log.error("Error listing items", e);
             return "Error listing items: " + e.getMessage();
         }
     }
 
     public String getItemState(String itemName) {
-        Log.infof("getItemState: %s", itemName);
+        log.info("getItemState: {}", itemName);
         try {
             Response response = safeInvoke(() -> openHabClient.getItemState(itemName));
             int status = response.getStatus();
             if (status == 404) {
-                Log.infof("getItemState: %s not found", itemName);
+                log.info("getItemState: {} not found", itemName);
                 return "Item not found: " + itemName;
             }
             String state = response.readEntity(String.class);
-            Log.infof("getItemState: %s = %s (HTTP %d)", itemName, state, status);
+            log.info("getItemState: {} = {} (HTTP {})", itemName, state, status);
             return state;
         } catch (Exception e) {
-            Log.error("Error getting item state: " + itemName, e);
+            log.error("Error getting item state: " + itemName, e);
             return "Error getting item state: " + e.getMessage();
         }
     }
 
     public String sendItemCommand(String itemName, String command) {
-        Log.infof("sendItemCommand: item=%s, command=%s", itemName, command);
+        log.info("sendItemCommand: item={}, command={}", itemName, command);
         try {
             Response response = safeInvoke(() -> openHabClient.sendItemCommand(itemName, command));
             int status = response.getStatus();
             if (status == 200 || status == 202) {
                 String result = "Command '" + command + "' sent to item '" + itemName + "' successfully";
-                Log.infof("sendItemCommand: %s", result);
+                log.info("sendItemCommand: {}", result);
                 return result;
             }
             if (status == 404) {
-                Log.infof("sendItemCommand: item %s not found", itemName);
+                log.info("sendItemCommand: item {} not found", itemName);
                 return "Item not found: " + itemName;
             }
-            Log.warnf("sendItemCommand: unexpected HTTP %d for item=%s command=%s", status, itemName, command);
+            log.warn("sendItemCommand: unexpected HTTP {} for item={} command={}", status, itemName, command);
             return "Error sending command to '" + itemName + "': HTTP " + status;
         } catch (Exception e) {
-            Log.error("Error sending command to item: " + itemName, e);
+            log.error("Error sending command to item: " + itemName, e);
             return "Error sending command: " + e.getMessage();
+        }
+    }
+
+    public String createItem(String name, String type, String label, String category, List<String> groups) {
+        log.info("createItem: name={}, type={}", name, type);
+        try {
+            java.util.Map<String, Object> item = new java.util.HashMap<>();
+            item.put("name", name);
+            item.put("type", type);
+            item.put("label", label != null ? label : "");
+            item.put("category", category != null ? category : "");
+            item.put("groupNames", groups != null ? groups : List.of());
+            
+            String itemJson = jsonMapper.writeValueAsString(item);
+            Response response = safeInvoke(() -> openHabClient.createOrUpdateItem(name, itemJson));
+            int status = response.getStatus();
+            if (status == 200 || status == 201) {
+                return "Item '" + name + "' created/updated successfully";
+            }
+            String error = response.readEntity(String.class);
+            log.warn("createItem: failed with HTTP {}: {}", status, error);
+            return "Error creating item '" + name + "': HTTP " + status + " " + error;
+        } catch (Exception e) {
+            log.error("Error creating item: " + name, e);
+            return "Error creating item: " + e.getMessage();
         }
     }
 }

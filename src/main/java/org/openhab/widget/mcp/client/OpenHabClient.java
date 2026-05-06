@@ -78,4 +78,18 @@ public interface OpenHabClient {
     @Path("/items/{name}")
     @Consumes(MediaType.TEXT_PLAIN)
     Response sendItemCommand(@PathParam("name") String name, String command);
+
+    @PUT
+    @Path("/items/{name}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response createOrUpdateItem(@PathParam("name") String name, String itemJson);
+
+    // --- Persistence ---
+
+    @PUT
+    @Path("/persistence/items/{name}")
+    Response addPersistenceData(
+            @PathParam("name") String name,
+            @QueryParam("time") String time,
+            @QueryParam("state") String state);
 }

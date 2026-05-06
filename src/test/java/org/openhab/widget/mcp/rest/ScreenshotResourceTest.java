@@ -1,4 +1,4 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.rest;
 
 import com.github.romankh3.image.comparison.ImageComparison;
 import com.github.romankh3.image.comparison.ImageComparisonUtil;
@@ -10,6 +10,7 @@ import io.restassured.config.HttpClientConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 import javax.imageio.ImageIO;
 import java.awt.*;

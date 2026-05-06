@@ -5,6 +5,7 @@ import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.List;
 
 @ApplicationScoped
 public class ItemTools {
@@ -32,5 +33,15 @@ public class ItemTools {
             @ToolArg(description = "The item name to send the command to, e.g. MySwitch") String itemName,
             @ToolArg(description = "The command to send, e.g. ON, OFF, 75, UP, DOWN, STOP") String command) {
         return itemService.sendItemCommand(itemName, command);
+    }
+
+    @Tool(description = "Create a new OpenHAB item or update an existing one.")
+    public String createItem(
+            @ToolArg(description = "The unique name of the item, e.g. MyLight") String itemName,
+            @ToolArg(description = "The type of the item, e.g. Switch, Dimmer, Number, String, Rollershutter, Color") String type,
+            @ToolArg(required = false, description = "The label for the item") String label,
+            @ToolArg(required = false, description = "The category/icon for the item, e.g. light, temperature") String category,
+            @ToolArg(required = false, description = "The list of group names the item should belong to") List<String> groups) {
+        return itemService.createItem(itemName, type, label, category, groups);
     }
 }

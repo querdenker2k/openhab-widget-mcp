@@ -1,4 +1,4 @@
-package org.openhab.widget.mcp;
+package org.openhab.widget.mcp.mcp;
 
 import io.quarkiverse.mcp.server.test.McpAssured;
 import io.quarkus.test.common.QuarkusTestResource;
@@ -7,14 +7,12 @@ import io.restassured.RestAssured;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import static io.restassured.RestAssured.given;

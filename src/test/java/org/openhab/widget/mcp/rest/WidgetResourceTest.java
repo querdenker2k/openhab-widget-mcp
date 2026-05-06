@@ -5,7 +5,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.openhab.widget.mcp.OpenHabTestResource;
+import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 import java.io.File;
 import java.io.IOException;
