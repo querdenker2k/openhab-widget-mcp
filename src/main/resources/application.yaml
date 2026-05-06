@@ -6,6 +6,15 @@ openhab:
   output-dir: openhab-screenshots
 
 quarkus:
+  banner:
+    path: banner.txt
+    enabled: false
+  container-image:
+    build: true
+    push: true
+    image: "rd86/openhab-widget-mcp"
+    tag: "${project.version}"
+    builder: docker
   rest-client:
     openhab:
       url: ${openhab.url}
@@ -28,6 +37,8 @@ quarkus:
     info-description: REST API and MCP server for managing OpenHAB custom widgets and items
 
   http:
+    cors:
+      enabled: true
     port: 8081
     test-port: 0
 

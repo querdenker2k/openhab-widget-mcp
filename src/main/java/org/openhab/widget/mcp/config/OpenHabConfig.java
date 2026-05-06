@@ -11,11 +11,11 @@ public interface OpenHabConfig {
     @WithDefault("http://localhost:8080")
     String url();
 
-    Optional<String> apiToken();
+    String apiToken();
 
-    Optional<String> username();
+    String username();
 
-    Optional<String> password();
+    String password();
 
     @WithDefault("/tmp/openhab-screenshots")
     String outputDir();

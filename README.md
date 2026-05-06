@@ -1,0 +1,147 @@
+# OpenHAB Widget MCP
+
+A Quarkus-based MCP (Model Context Protocol) server and REST API for managing OpenHAB custom widgets, items, and pages. It provides browser automation via Playwright to capture screenshots of OpenHAB widgets and pages.
+
+## Features
+
+- **MCP Server via SSE**: Compatible with Claude Desktop and other MCP clients
+- **Screenshot Capture**: Playwright-based browser automation to capture widget and page screenshots
+- **Swagger UI**: Interactive API documentation available at `/q/swagger-ui`
+- **Docker Support**: Ready-to-use container image
+
+## Prerequisites
+
+- Java 21 (for local builds)
+- Maven 3.8+
+- Docker (for container builds)
+- OpenHAB instance (for runtime)
+
+## Configuration
+
+All configuration is done via `application.yaml` or environment variables. The following parameters are available:
+
+### OpenHAB Configuration
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `openhab.url` | String | `http://localhost:8080` | URL of your OpenHAB instance |
+| `openhab.api-token` | String | *(empty)* | API token for OpenHAB authentication |
+| `openhab.username` | String | *(empty)* | Username for OpenHAB authentication |
+| `openhab.password` | String | *(empty)* | Password for OpenHAB authentication |
+| `openhab.output-dir` | String | `/tmp/openhab-screenshots` | Directory for saved screenshots |
+
+
+### Environment Variable Mapping
+
+Environment variables override configuration properties using the `*_` prefix convention:
+
+```bash
+export OPENHAB_URL=http://your-openhab:8080
+export OPENHAB_API_TOKEN=your-api-token
+export OPENHAB_USERNAME=your-username
+export OPENHAB_PASSWORD=your-password
+export OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots
+```
+
+## Local Development
+
+### Build and Run
+
+```bash
+# Build the project
+mvn clean package
+
+# Run locally
+mvn quarkus:dev
+```
+
+Or run the packaged JAR:
+
+```bash
+java -jar target/quarkus-app/quarkus-run.jar
+```
+
+## Docker Container
+
+The image is prebuild and can be pulled from rd86/openhab-widget-mcp:latest
+
+### Build the Container
+
+```bash
+# Build using Quarkus Docker support
+mvn clean package -Dquarkus.container-image.build=true
+
+# Or using Docker directly
+docker build -f src/main/docker/Dockerfile.jvm -t openhab-widget-mcp:latest .
+```
+
+### Run the Container
+
+```bash
+docker run -d \
+  --name openhab-widget-mcp \
+  -p 8081:8081 \
+  -e OPENHAB_URL=http://your-openhab:8080 \
+  -e OPENHAB_API_TOKEN=your-api-token \
+      - OPENHAB_USERNAME=your-username \
+      - OPENHAB_PASSWORD=your-password \
+  -e OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots \
+  -v /tmp/openhab-screenshots:/tmp/openhab-screenshots \
+  openhab-widget-mcp:latest
+```
+
+### Docker Compose
+
+```yaml
+version: '3.8'
+
+services:
+  openhab-widget-mcp:
+    image: openhab-widget-mcp:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - OPENHAB_URL=http://your-openhab:8080
+      - OPENHAB_API_TOKEN=your-api-token
+      - OPENHAB_USERNAME=your-username
+      - OPENHAB_PASSWORD=your-password
+      - OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots
+    volumes:
+      - screenshots:/tmp/openhab-screenshots
+    restart: unless-stopped
+
+volumes:
+  screenshots:
+```
+
+### Required Environment Variables Summary
+
+| Variable | Required | Default | Description |
+|----------|---------|---------|-------------|
+| `OPENHAB_URL` | Yes* | `http://localhost:8080` | Your OpenHAB instance URL |
+| `OPENHAB_API_TOKEN` | Yes | *(empty)* | API token for authentication |
+| `OPENHAB_USERNAME` | Yes | *(empty)* | Username for authentication |
+| `OPENHAB_PASSWORD` | Yes | *(empty)* | Password for authentication |
+| `OPENHAB_OUTPUT_DIR` | No | `/tmp/openhab-screenshots` | Screenshot output directory |
+
+> \* You must provide a valid `OPENHAB_URL` pointing to your OpenHAB instance.
+
+## API Documentation
+
+Once running, the Swagger UI is available at:
+
+```
+http://localhost:8081/q/swagger-ui
+```
+
+## MCP Integration
+
+This service exposes an MCP server via SSE (Server-Sent Events). Configure your MCP client (e.g., Claude Desktop) to connect to the SSE endpoint.
+
+## Building for Production
+
+```bash
+mvn clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.push=true
+```
+
+This will build and push the container image to your configured registry.

@@ -1,0 +1,5 @@
+.idea/
+*.iml
+openhab-screenshots/
+.claude/
+.git/

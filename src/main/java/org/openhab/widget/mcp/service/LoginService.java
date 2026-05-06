@@ -18,27 +18,8 @@ public class LoginService {
     @Inject
     BrowserService browserService;
 
-    private boolean loggedIn = false;
-    private String accessToken = "";
-
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public synchronized String ensureToken() {
-        String staticToken = config.apiToken().orElse("");
-        if (!staticToken.isBlank()) {
-            return staticToken;
-        }
-        if (accessToken.isBlank() && config.username().isPresent() && !config.username().get().isBlank()) {
-            Log.info("No access token yet — triggering browser login");
-            login();
-        }
-        return accessToken;
-    }
-
     public synchronized void login(Page p) {
-        String staticToken = config.apiToken().orElse("");
+        String staticToken = config.apiToken();
 
         if (!staticToken.isBlank()) {
             Log.info("API Token configured — trying to pre-populate localStorage");
@@ -54,14 +35,7 @@ public class LoginService {
             }
         }
 
-        String username = config.username().orElse("");
-        if (username.isBlank()) {
-            Log.info("No username configured — skipping interactive login");
-            loggedIn = true;
-            return;
-        }
-
-        Log.infof("Starting interactive browser login for user '%s'", username);
+        Log.infof("Starting interactive browser login for user '%s'", config.username());
         try {
             // If we are already on /auth, use it. Otherwise go there.
             if (!"/auth".equals(BrowserService.pathOf(p.url()))) {
@@ -85,11 +59,11 @@ public class LoginService {
             }
             Log.infof("Auth page reached: %s", p.url());
 
-            Log.infof("Filling login form for user '%s'", username);
+            Log.infof("Filling login form for user '%s'", config.username());
             p.waitForSelector("input[placeholder='User Name']",
                     new Page.WaitForSelectorOptions().setTimeout(10000));
-            p.fill("input[placeholder='User Name']", username);
-            p.fill("input[placeholder='Password']", config.password().orElse(""));
+            p.fill("input[placeholder='User Name']", config.username());
+            p.fill("input[placeholder='Password']", config.password());
             Log.info("Submitting login form");
             p.click("input[type='Submit']");
 
@@ -100,7 +74,6 @@ public class LoginService {
             Log.infof("Login complete, current URL: %s", p.url());
 
             extractAccessToken(p);
-            loggedIn = true;
         } catch (Exception e) {
             Log.errorf(e, "Browser login failed: %s", e.getMessage());
         }
@@ -134,7 +107,6 @@ public class LoginService {
                     }
                     """);
             if (result instanceof String token && !token.isBlank()) {
-                accessToken = token;
                 Log.infof("OAuth2 access token extracted successfully (%d chars)", token.length());
             } else {
                 Log.warn("No access token in token response — REST calls may fail without auth");

@@ -31,15 +31,11 @@ public class BrowserService {
     private BrowserContext context;
 
     void onStart(@Observes StartupEvent ev) {
-        if (config.username().isPresent() && !config.username().get().isBlank()) {
-            Log.info("Pre-initializing browser on startup");
-            try {
-                ensureBrowser();
-            } catch (Exception e) {
-                Log.warnf("Browser startup initialization failed: %s", e.getMessage(), e);
-            }
-        } else {
-            Log.info("No username configured — skipping browser startup initialization");
+        Log.info("Pre-initializing browser on startup");
+        try {
+            ensureBrowser();
+        } catch (Exception e) {
+            Log.warnf("Browser startup initialization failed: %s", e.getMessage(), e);
         }
     }
 

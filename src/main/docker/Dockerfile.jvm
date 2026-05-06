@@ -1,0 +1,11 @@
+FROM eclipse-temurin:21-jre
+
+WORKDIR /app
+
+COPY target/quarkus-app /app
+
+EXPOSE 8081
+
+ENV JAVA_OPTS="-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar quarkus-run.jar"]
