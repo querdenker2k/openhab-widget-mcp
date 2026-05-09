@@ -81,7 +81,7 @@ public class PageService {
                 "label", label,
                 "layoutType", "fixed",
                 "fixedType", "canvas",
-                "gridEnable", false,
+                "gridEnable", true,
                 "screenWidth", 800,
                 "screenHeight", 600,
                 "scale", false,

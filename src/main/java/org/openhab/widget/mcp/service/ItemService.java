@@ -110,7 +110,7 @@ public class ItemService {
             item.put("label", label != null ? label : "");
             item.put("category", category != null ? category : "");
             item.put("groupNames", groups != null ? groups : List.of());
-            
+
             String itemJson = jsonMapper.writeValueAsString(item);
             Response response = safeInvoke(() -> openHabClient.createOrUpdateItem(name, itemJson));
             int status = response.getStatus();
@@ -123,6 +123,78 @@ public class ItemService {
         } catch (Exception e) {
             log.error("Error creating item: " + name, e);
             return "Error creating item: " + e.getMessage();
+        }
+    }
+
+    public String deleteItem(String name) {
+        log.info("deleteItem: {}", name);
+        try {
+            Response response = safeInvoke(() -> openHabClient.deleteItem(name));
+            int status = response.getStatus();
+            if (status == 200 || status == 204) {
+                return "Item '" + name + "' deleted successfully";
+            }
+            if (status == 404) {
+                return "Item not found: " + name;
+            }
+            String error = response.readEntity(String.class);
+            log.warn("deleteItem: failed with HTTP {}: {}", status, error);
+            return "Error deleting item '" + name + "': HTTP " + status + " " + error;
+        } catch (Exception e) {
+            log.error("Error deleting item: " + name, e);
+            return "Error deleting item: " + e.getMessage();
+        }
+    }
+
+    public String setItemMetadata(String name, String namespace, String value, Map<String, Object> config) {
+        log.info("setItemMetadata: item={}, namespace={}", name, namespace);
+        try {
+            Map<String, Object> body = new java.util.HashMap<>();
+            body.put("value", value != null ? value : " ");
+            body.put("config", config != null ? config : Map.of());
+
+            String json = jsonMapper.writeValueAsString(body);
+            Response response = safeInvoke(() -> openHabClient.setItemMetadata(name, namespace, json));
+            int status = response.getStatus();
+            if (status == 200 || status == 201) {
+                return "Metadata '" + namespace + "' set on item '" + name + "' successfully";
+            }
+            if (status == 404) {
+                return "Item not found: " + name;
+            }
+            String error = response.readEntity(String.class);
+            log.warn("setItemMetadata: failed with HTTP {}: {}", status, error);
+            return "Error setting metadata '" + namespace + "' on '" + name + "': HTTP " + status + " " + error;
+        } catch (Exception e) {
+            log.error("Error setting item metadata: " + name + "/" + namespace, e);
+            return "Error setting item metadata: " + e.getMessage();
+        }
+    }
+
+    public String setItemStateDescriptionOptions(String name, String options) {
+        log.info("setItemStateDescriptionOptions: item={}, options={}", name, options);
+        Map<String, Object> config = new java.util.HashMap<>();
+        config.put("options", options);
+        return setItemMetadata(name, "stateDescription", " ", config);
+    }
+
+    public String deleteItemMetadata(String name, String namespace) {
+        log.info("deleteItemMetadata: item={}, namespace={}", name, namespace);
+        try {
+            Response response = safeInvoke(() -> openHabClient.deleteItemMetadata(name, namespace));
+            int status = response.getStatus();
+            if (status == 200 || status == 204) {
+                return "Metadata '" + namespace + "' removed from item '" + name + "'";
+            }
+            if (status == 404) {
+                return "Item or metadata not found: " + name + "/" + namespace;
+            }
+            String error = response.readEntity(String.class);
+            log.warn("deleteItemMetadata: failed with HTTP {}: {}", status, error);
+            return "Error removing metadata '" + namespace + "' from '" + name + "': HTTP " + status + " " + error;
+        } catch (Exception e) {
+            log.error("Error removing item metadata: " + name + "/" + namespace, e);
+            return "Error removing item metadata: " + e.getMessage();
         }
     }
 }

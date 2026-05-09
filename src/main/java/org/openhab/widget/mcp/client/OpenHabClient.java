@@ -84,6 +84,24 @@ public interface OpenHabClient {
     @Consumes(MediaType.APPLICATION_JSON)
     Response createOrUpdateItem(@PathParam("name") String name, String itemJson);
 
+    @DELETE
+    @Path("/items/{name}")
+    Response deleteItem(@PathParam("name") String name);
+
+    @PUT
+    @Path("/items/{name}/metadata/{namespace}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    Response setItemMetadata(
+            @PathParam("name") String name,
+            @PathParam("namespace") String namespace,
+            String body);
+
+    @DELETE
+    @Path("/items/{name}/metadata/{namespace}")
+    Response deleteItemMetadata(
+            @PathParam("name") String name,
+            @PathParam("namespace") String namespace);
+
     // --- Persistence ---
 
     @PUT
