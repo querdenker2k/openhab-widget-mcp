@@ -32,11 +32,8 @@ public class WidgetTools {
             + "Creates the widget if it does not exist, updates it otherwise.")
     public WidgetService.CreateOrUpdateWidget createOrUpdateWidget(
             @ToolArg(description = "Absolute path to the widget YAML file, e.g. /home/robert/VSCode Projects/main-ui-widgets/RD_MyWidget.yaml")
-            String filePath,
-            @ToolArg(description = "Description to set for the widget. "
-                    + "The description will be added to the widget definition as 'description: <text>'.")
-            String description) {
-        return widgetService.createOrUpdateWidget(filePath, description);
+            String filePath) {
+        return widgetService.createOrUpdateWidget(filePath);
     }
 
     @Tool(description = "Delete a widget from OpenHAB by its UID.")

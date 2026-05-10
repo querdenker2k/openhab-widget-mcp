@@ -75,24 +75,6 @@ public class WidgetService {
     }
 
     @SneakyThrows
-    public CreateOrUpdateWidget createOrUpdateWidget(String filePath, String description) {
-        Log.infof("createOrUpdateWidget from file: %s", filePath);
-        String yamlContent = Files.readString(Path.of(filePath));
-        if (description != null && !description.isBlank()) {
-            yamlContent = addDescriptionToYaml(yamlContent, description);
-        }
-        return createOrUpdateWidgetFromYaml(yamlContent);
-    }
-
-    @SneakyThrows
-    private String addDescriptionToYaml(String yamlContent, String description) {
-        Log.infof("Adding description to widget: %s", description);
-        Map<String, Object> widgetMap = yamlMapper.readValue(yamlContent, Map.class);
-        widgetMap.put("description", description);
-        return yamlMapper.writeValueAsString(widgetMap);
-    }
-
-    @SneakyThrows
     @SuppressWarnings("unchecked")
     public CreateOrUpdateWidget createOrUpdateWidgetFromYaml(String yamlContent) {
         Map<String, Object> widgetMap = yamlMapper.readValue(yamlContent, Map.class);
