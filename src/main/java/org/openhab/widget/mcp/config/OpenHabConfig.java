@@ -19,4 +19,10 @@ public interface OpenHabConfig {
 
     @WithDefault("/tmp/openhab-screenshots")
     String outputDir();
+
+    @WithDefault("1200")
+    int pageWidth();
+
+    @WithDefault("800")
+    int pageHeight();
 }

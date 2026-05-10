@@ -69,6 +69,34 @@ public class WidgetPrompts {
     }
 
     // ---------------------------------------------------------------------
+    //  create_page
+    // ---------------------------------------------------------------------
+
+    @Prompt(name = "create_page",
+            title = "Create page",
+            description = "Creates a new OpenHAB page with multiple widgets arranged on a canvas. "
+                    + "Selects widgets based on available widget descriptions and the user's request.")
+    PromptMessage createPage(
+            @PromptArg(name = "description",
+                    description = "What should be visible on the page? "
+                            + "E.g. 'overview of the living room: temperature, lights and blinds'")
+            String description,
+            @PromptArg(name = "page_uid", required = false,
+                    description = "Optional: desired page UID, e.g. living_room_overview")
+            String pageUid,
+            @PromptArg(name = "page_label", required = false,
+                    description = "Optional: page label shown in the sidebar")
+            String pageLabel) {
+
+        String body = CREATE_PAGE_TEMPLATE
+                .replace("{description}", nullSafe(description))
+                .replace("{page_uid}", nullSafe(pageUid))
+                .replace("{page_label}", nullSafe(pageLabel));
+
+        return PromptMessage.withUserRole(new TextContent(body));
+    }
+
+    // ---------------------------------------------------------------------
 
     private static String nullSafe(String s) {
         return s == null ? "" : s;
@@ -194,6 +222,11 @@ public class WidgetPrompts {
               reusable)
             - Apply the locked size, colors, font sizes, and padding consistently
             - Follow existing UID naming conventions you saw via listWidgets
+            - Add a `description` field to the root component's `config` section:
+              one sentence describing what this widget shows or does, e.g.:
+              `description: "Shows the current charge level and range of the car"`
+              This description is stored in OpenHAB and used by the create_page
+              prompt to automatically select matching widgets.
 
             ## Step 4: Save and upload
 
@@ -306,5 +339,104 @@ public class WidgetPrompts {
 
             Widget UID:        {widget_uid}
             Requested change:  {change_request}
+            """;
+
+    private static final String CREATE_PAGE_TEMPLATE = """
+            You are helping the user build an OpenHAB Main UI page that contains
+            multiple widgets arranged on a canvas.
+
+            # Available MCP tools you will use
+
+            Widget discovery:
+            - listWidgets — get all available widget definitions including their
+              config.description field (if set) and props parameters
+            - getWidget(uid) — fetch full YAML for a widget when you need more detail
+              to understand what it shows or which items it needs
+
+            Item discovery:
+            - listItems(nameFilter) — verify item names exist before setting propsJson
+            - getItemState(itemName) — check current values for sensible defaults
+
+            Page lifecycle:
+            - createPage(pageUid, label, placementsJson) — create or update the page.
+              Canvas size is configured server-side (openhab.page-width/height).
+              placementsJson is a JSON array of placement objects:
+              [{"widgetUid":"...", "x":0, "y":0, "w":600, "h":400, "propsJson":"{}"}]
+              Coordinates start at (0,0) top-left. No overlaps allowed.
+              This call is idempotent — safe to repeat for corrections.
+            - screenshotPage(uid) — take a screenshot of the resulting page
+
+            Do NOT call deleteWidget, deleteItem, or deletePage unless explicitly asked.
+
+            # Workflow — follow strictly
+
+            ## Step 1: Analyse available widgets
+
+            Call listWidgets(). For each widget in the response:
+            - Read config.description if present — this is the primary indicator of
+              widget purpose.
+            - If config.description is missing: call getWidget(uid) and infer the
+              purpose from the uid name, props parameter labels, and component tree.
+
+            Build a mental map: widget uid → what it shows.
+
+            ## Step 2: Select widgets
+
+            Based on the page description, decide which widgets to include:
+            - Prefer widgets whose description or structure matches the requested topics.
+            - If multiple widgets match a topic, prefer the one with richer content.
+            - If an important topic has NO matching widget, note it clearly and continue
+              with what is available. Do NOT create placeholder widgets.
+            - For each selected widget that has ITEM parameters: call listItems() to
+              confirm the item names exist and pass them in propsJson.
+
+            ## Step 3: Design the layout
+
+            The canvas has a fixed size defined by server config (shown in the
+            screenshotPage output dimensions). Typical sizes: 1200×800 (tablet/desktop).
+
+            Assign each widget a position (x, y) and size (w, h):
+            - No overlapping placements.
+            - Match the size to the widget's natural size class (e.g. a small KPI card
+              needs ~300×200, a chart or composite card needs ~600×400).
+            - Group thematically related widgets spatially.
+            - Leave breathing room — do not pack every pixel.
+
+            ## Step 4: Create the page
+
+            Determine pageUid and label:
+            - page_uid hint: {page_uid}
+            - page_label hint: {page_label}
+            If hints are empty, derive a sensible uid from the page description
+            (snake_case, no spaces).
+
+            Call createPage(pageUid, label, placementsJson) with all placements.
+
+            ## Step 5: Screenshot and verify
+
+            Call screenshotPage(uid). Examine the screenshot:
+            - Are all selected widgets visible?
+            - Is any widget clipped or outside the canvas?
+            - Is the layout balanced — no large empty areas, no crowding?
+            - Do item references show real values (not NULL / UNDEF / brackets)?
+              If so, fix propsJson and call createPage again (idempotent).
+
+            Up to 3 correction passes are expected. After that, surface the
+            remaining problem with a specific question — do not present a broken page.
+
+            ## Step 6: Present
+
+            Show the final screenshot. In 2–3 sentences describe:
+            - Which widgets are on the page and what they show
+            - The layout decision (e.g. "two columns: status left, controls right")
+            - Any topics from the request that had no matching widget (so the user
+              can create them with create_widget)
+
+            Offer 2–3 concrete next steps, e.g. "add a missing widget", "adjust
+            column widths", "create a widget for topic X".
+
+            # User request
+
+            {description}
             """;
 }

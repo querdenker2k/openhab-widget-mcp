@@ -17,6 +17,7 @@ import org.openhab.widget.mcp.util.ImageUtil;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,7 +67,7 @@ public class PageService {
 
         Map<String, Object> canvasItem = new LinkedHashMap<>();
         canvasItem.put("component", "oh-canvas-item");
-        canvasItem.put("config", Map.of("x", 0, "y", 0, "h", 600, "w", 800));
+        canvasItem.put("config", Map.of("x", 0, "y", 0, "h", config.pageHeight(), "w", config.pageWidth()));
         canvasItem.put("slots", Map.of("default", List.of(widgetRef)));
 
         Map<String, Object> canvasLayer = new LinkedHashMap<>();
@@ -82,8 +83,8 @@ public class PageService {
                 "layoutType", "fixed",
                 "fixedType", "canvas",
                 "gridEnable", true,
-                "screenWidth", 800,
-                "screenHeight", 600,
+                "screenWidth", config.pageWidth(),
+                "screenHeight", config.pageHeight(),
                 "scale", false,
                 "sidebar", true
         ));
@@ -117,6 +118,81 @@ public class PageService {
                 return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
             } else {
                 Log.warnf("createOrUpdatePage: create failed for '%s' HTTP %d", uid, status);
+                throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
+            }
+        }
+    }
+
+    public record WidgetPlacement(String widgetUid, int x, int y, int w, int h, String propsJson) {}
+
+    @SneakyThrows
+    public CreateOrUpdatePage createComplexPage(String uid, String label, List<WidgetPlacement> placements) {
+        Log.infof("createComplexPage: uid=%s, label=%s, %d placements", uid, label, placements.size());
+
+        List<Map<String, Object>> canvasItems = new ArrayList<>();
+        for (WidgetPlacement p : placements) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> props = (p.propsJson() == null || p.propsJson().isBlank())
+                    ? Map.of()
+                    : jsonMapper.readValue(p.propsJson(), Map.class);
+
+            Map<String, Object> widgetRef = new LinkedHashMap<>();
+            widgetRef.put("component", "widget:" + p.widgetUid());
+            widgetRef.put("config", props);
+
+            Map<String, Object> canvasItem = new LinkedHashMap<>();
+            canvasItem.put("component", "oh-canvas-item");
+            canvasItem.put("config", Map.of("x", p.x(), "y", p.y(), "h", p.h(), "w", p.w()));
+            canvasItem.put("slots", Map.of("default", List.of(widgetRef)));
+            canvasItems.add(canvasItem);
+        }
+
+        Map<String, Object> canvasLayer = new LinkedHashMap<>();
+        canvasLayer.put("component", "oh-canvas-layer");
+        canvasLayer.put("config", Map.of());
+        canvasLayer.put("slots", Map.of("default", canvasItems));
+
+        Map<String, Object> page = new LinkedHashMap<>();
+        page.put("uid", uid);
+        page.put("component", "oh-layout-page");
+        page.put("config", Map.of(
+                "label", label,
+                "layoutType", "fixed",
+                "fixedType", "canvas",
+                "gridEnable", true,
+                "screenWidth", config.pageWidth(),
+                "screenHeight", config.pageHeight(),
+                "scale", false,
+                "sidebar", true
+        ));
+        page.put("tags", List.of());
+        page.put("props", Map.of("parameters", List.of(), "parameterGroups", List.of()));
+        page.put("slots", Map.of(
+                "default", List.of(),
+                "masonry", List.of(),
+                "grid", List.of(),
+                "canvas", List.of(canvasLayer)
+        ));
+
+        String jsonBody = jsonMapper.writeValueAsString(page);
+
+        Response checkResponse = safeInvoke(() -> openHabClient.getPage(uid));
+        if (checkResponse.getStatus() == 200) {
+            Response updateResponse = safeInvoke(() -> openHabClient.updatePage(uid, jsonBody));
+            int updateStatus = updateResponse.getStatus();
+            if (updateStatus == 200) {
+                Log.infof("createComplexPage: updated '%s' HTTP %d", uid, updateStatus);
+                return new CreateOrUpdatePage(uid, CreateOrUpdateState.UPDATED);
+            } else {
+                throw new IllegalStateException("Error updating page '%s': HTTP %d".formatted(uid, updateStatus));
+            }
+        } else {
+            Response createResponse = safeInvoke(() -> openHabClient.createPage(jsonBody));
+            int status = createResponse.getStatus();
+            if (status == 200 || status == 201) {
+                Log.infof("createComplexPage: created '%s' HTTP %d", uid, status);
+                return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
+            } else {
                 throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
             }
         }

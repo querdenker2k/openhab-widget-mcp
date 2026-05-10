@@ -4,6 +4,8 @@ openhab:
   username: ""
   password: ""
   output-dir: openhab-screenshots
+  page-width: 1200
+  page-height: 800
 
 quarkus:
   banner:
