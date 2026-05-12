@@ -3,8 +3,6 @@ package org.openhab.widget.mcp.config;
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
 
-import java.util.Optional;
-
 @ConfigMapping(prefix = "openhab")
 public interface OpenHabConfig {
 
@@ -25,4 +23,13 @@ public interface OpenHabConfig {
 
     @WithDefault("800")
     int pageHeight();
+
+    @WithDefault("true")
+    boolean headless();
+
+    @WithDefault("1920")
+    int screenWidth();
+
+    @WithDefault("1280")
+    int screenHeight();
 }

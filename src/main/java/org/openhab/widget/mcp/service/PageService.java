@@ -163,7 +163,7 @@ public class PageService {
                 "screenWidth", config.pageWidth(),
                 "screenHeight", config.pageHeight(),
                 "scale", false,
-                "sidebar", true
+                "sidebar", false
         ));
         page.put("tags", List.of());
         page.put("props", Map.of("parameters", List.of(), "parameterGroups", List.of()));

@@ -12,7 +12,6 @@ import jakarta.inject.Inject;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Manages the Playwright infrastructure: Chromium instance, BrowserContext, and persistent Pages.
@@ -60,14 +59,14 @@ public class BrowserService {
             playwright = Playwright.create();
             browser = playwright.chromium().launch(
                     new BrowserType.LaunchOptions()
-                            .setHeadless(true)
+                            .setHeadless(config.headless())
                             .setArgs(List.of("--no-sandbox", "--disable-dev-shm-usage")));
 
-            context = browser.newContext(
-                    new Browser.NewContextOptions().setViewportSize(1280, 800));
 
-//            config.apiToken().ifPresent(token -> context.setExtraHTTPHeaders(Map.of("Authorization", "Bearer " + token)));
-            Log.info("Browser launched (1920x1080)");
+            context = browser.newContext(
+                    new Browser.NewContextOptions().setViewportSize(config.screenWidth(), config.screenHeight()));
+
+            Log.info("Browser launched (%sx%s)".formatted(config.screenWidth(), config.screenHeight()));
         }
     }
 
