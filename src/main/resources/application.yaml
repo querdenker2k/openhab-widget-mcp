@@ -14,7 +14,7 @@ quarkus:
   container-image:
     build: true
     push: true
-    image: "rd86/openhab-widget-mcp"
+    image: "openhab-widget-mcp"
     tag: "${project.version}"
     builder: docker
   rest-client:
