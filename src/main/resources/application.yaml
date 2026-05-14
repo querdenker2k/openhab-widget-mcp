@@ -12,6 +12,8 @@ quarkus:
     path: banner.txt
     enabled: false
   container-image:
+    registry: ghcr.io
+    group: querdenker2k
     build: true
     push: true
     image: "openhab-widget-mcp"
