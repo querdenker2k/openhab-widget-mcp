@@ -9,106 +9,135 @@ import jakarta.enterprise.context.ApplicationScoped;
 @ApplicationScoped
 public class WidgetPrompts {
 
-    // ---------------------------------------------------------------------
-    //  create_widget
-    // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  //  create_widget
+  // ---------------------------------------------------------------------
 
-    @Prompt(name = "create_widget",
-            title = "Create widget",
-            description = "Creates a new OpenHAB Main UI widget from a description. "
-                    + "Locks size, color scheme, typography, and density up front "
-                    + "and verifies the result via screenshot before presenting it.")
-    PromptMessage createWidget(
-            @PromptArg(name = "description",
-                    description = "What should the widget show or do? "
-                            + "E.g. 'card showing the car's current charge state and range'")
-            String description,
-            @PromptArg(name = "size_hint", required = false,
-                    description = "Optional: desired size class (small/medium/large/wide/full)")
-            String sizeHint,
-            @PromptArg(name = "color_hint", required = false,
-                    description = "Optional: color scheme (inherit/accent/semantic/brand), "
-                            + "with hex codes if applicable")
-            String colorHint,
-            @PromptArg(name = "design_reference", required = false,
-                    description = "Optional: another widget which should be used as reference for styling")
-            String design_reference) {
+  @Prompt(
+      name = "create_widget",
+      title = "Create widget",
+      description =
+          "Creates a new OpenHAB Main UI widget from a description. "
+              + "Locks size, color scheme, typography, and density up front "
+              + "and verifies the result via screenshot before presenting it.")
+  PromptMessage createWidget(
+      @PromptArg(
+              name = "description",
+              description =
+                  "What should the widget show or do? "
+                      + "E.g. 'card showing the car's current charge state and range'")
+          String description,
+      @PromptArg(
+              name = "size_hint",
+              required = false,
+              description = "Optional: desired size class (small/medium/large/wide/full)")
+          String sizeHint,
+      @PromptArg(
+              name = "color_hint",
+              required = false,
+              description =
+                  "Optional: color scheme (inherit/accent/semantic/brand), "
+                      + "with hex codes if applicable")
+          String colorHint,
+      @PromptArg(
+              name = "design_reference",
+              required = false,
+              description =
+                  "Optional: another widget which should be used as reference for styling")
+          String design_reference) {
 
-        String body = CREATE_WIDGET_TEMPLATE
-                .replace("{description}", nullSafe(description))
-                .replace("{size_hint}", nullSafe(sizeHint))
-                .replace("{color_hint}", nullSafe(colorHint))
-                .replace("{design_reference}", nullSafe(design_reference));
+    String body =
+        CREATE_WIDGET_TEMPLATE
+            .replace("{description}", nullSafe(description))
+            .replace("{size_hint}", nullSafe(sizeHint))
+            .replace("{color_hint}", nullSafe(colorHint))
+            .replace("{design_reference}", nullSafe(design_reference));
 
-        return PromptMessage.withUserRole(new TextContent(body));
-    }
+    return PromptMessage.withUserRole(new TextContent(body));
+  }
 
-    // ---------------------------------------------------------------------
-    //  refine_widget
-    // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  //  refine_widget
+  // ---------------------------------------------------------------------
 
-    @Prompt(name = "refine_widget",
-            title = "Refine widget",
-            description = "Refines an existing widget. Fetches the current YAML via "
-                    + "getWidget first, applies only the requested change, and "
-                    + "verifies the result via screenshot.")
-    PromptMessage refineWidget(
-            @PromptArg(name = "widget_uid",
-                    description = "UID of the existing widget, e.g. car_charging_widget")
-            String widgetUid,
-            @PromptArg(name = "change_request",
-                    description = "What should be changed? "
-                            + "E.g. 'darker background', 'larger font for the range value'")
-            String changeRequest) {
+  @Prompt(
+      name = "refine_widget",
+      title = "Refine widget",
+      description =
+          "Refines an existing widget. Fetches the current YAML via "
+              + "getWidget first, applies only the requested change, and "
+              + "verifies the result via screenshot.")
+  PromptMessage refineWidget(
+      @PromptArg(
+              name = "widget_uid",
+              description = "UID of the existing widget, e.g. car_charging_widget")
+          String widgetUid,
+      @PromptArg(
+              name = "change_request",
+              description =
+                  "What should be changed? "
+                      + "E.g. 'darker background', 'larger font for the range value'")
+          String changeRequest) {
 
-        String body = REFINE_WIDGET_TEMPLATE
-                .replace("{widget_uid}", nullSafe(widgetUid))
-                .replace("{change_request}", nullSafe(changeRequest));
+    String body =
+        REFINE_WIDGET_TEMPLATE
+            .replace("{widget_uid}", nullSafe(widgetUid))
+            .replace("{change_request}", nullSafe(changeRequest));
 
-        return PromptMessage.withUserRole(new TextContent(body));
-    }
+    return PromptMessage.withUserRole(new TextContent(body));
+  }
 
-    // ---------------------------------------------------------------------
-    //  create_page
-    // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
+  //  create_page
+  // ---------------------------------------------------------------------
 
-    @Prompt(name = "create_page",
-            title = "Create page",
-            description = "Creates a new OpenHAB page with multiple widgets arranged on a canvas. "
-                    + "Selects widgets based on available widget descriptions and the user's request.")
-    PromptMessage createPage(
-            @PromptArg(name = "description",
-                    description = "What should be visible on the page? "
-                            + "E.g. 'overview of the living room: temperature, lights and blinds'")
-            String description,
-            @PromptArg(name = "page_uid", required = false,
-                    description = "Optional: desired page UID, e.g. living_room_overview")
-            String pageUid,
-            @PromptArg(name = "page_label", required = false,
-                    description = "Optional: page label shown in the sidebar")
-            String pageLabel) {
+  @Prompt(
+      name = "create_page",
+      title = "Create page",
+      description =
+          "Creates a new OpenHAB page with multiple widgets arranged on a canvas. "
+              + "Selects widgets based on available widget descriptions and the user's request.")
+  PromptMessage createPage(
+      @PromptArg(
+              name = "description",
+              description =
+                  "What should be visible on the page? "
+                      + "E.g. 'overview of the living room: temperature, lights and blinds'")
+          String description,
+      @PromptArg(
+              name = "page_uid",
+              required = false,
+              description = "Optional: desired page UID, e.g. living_room_overview")
+          String pageUid,
+      @PromptArg(
+              name = "page_label",
+              required = false,
+              description = "Optional: page label shown in the sidebar")
+          String pageLabel) {
 
-        String body = CREATE_PAGE_TEMPLATE
-                .replace("{description}", nullSafe(description))
-                .replace("{page_uid}", nullSafe(pageUid))
-                .replace("{page_label}", nullSafe(pageLabel));
+    String body =
+        CREATE_PAGE_TEMPLATE
+            .replace("{description}", nullSafe(description))
+            .replace("{page_uid}", nullSafe(pageUid))
+            .replace("{page_label}", nullSafe(pageLabel));
 
-        return PromptMessage.withUserRole(new TextContent(body));
-    }
+    return PromptMessage.withUserRole(new TextContent(body));
+  }
 
-    // ---------------------------------------------------------------------
+  // ---------------------------------------------------------------------
 
-    private static String nullSafe(String s) {
-        return s == null ? "" : s;
-    }
+  private static String nullSafe(String s) {
+    return s == null ? "" : s;
+  }
 
-    // =====================================================================
-    //  Prompt templates
-    //  Kept in English on purpose — LLMs follow long structured prompts
-    //  more reliably in English than in other languages.
-    // =====================================================================
+  // =====================================================================
+  //  Prompt templates
+  //  Kept in English on purpose — LLMs follow long structured prompts
+  //  more reliably in English than in other languages.
+  // =====================================================================
 
-    private static final String CREATE_WIDGET_TEMPLATE = """
+  private static final String CREATE_WIDGET_TEMPLATE =
+      """
             You are helping the user build a custom widget for the OpenHAB Main UI.
             Widgets are defined in YAML using F7-based components (oh-label-card,
             oh-button, oh-toggle-item, oh-list-card, oh-knob-card, f7-card, f7-row,
@@ -143,7 +172,7 @@ public class WidgetPrompts {
 
             Item creation (only on explicit request):
             - createItem, setItemMetadata, setItemStateDescriptionOptions
-            
+
             Item state change:
             - getItemState - to check whats currently set.
             - sendItemCommand - update the state while sending a command.
@@ -188,9 +217,9 @@ public class WidgetPrompts {
                - semantic  — red / amber / green for status; neutral otherwise.
                - brand     — full custom palette. Ask for primary, secondary,
                              background, text (as hex). Confirm dark-mode behavior.
-               - reference — file name which contains a widget definition. This 
+               - reference — file name which contains a widget definition. This
                              should be used as reference for styling the widget
-                             and what colors to use. 
+                             and what colors to use.
 
             4. TYPOGRAPHY EMPHASIS — pick exactly one. Use these as concrete pixel
                targets in the YAML; do not invent in-between values:
@@ -207,7 +236,7 @@ public class WidgetPrompts {
 
                size_hint:  {size_hint}
                color_hint: {color_hint}
-            
+
             If the user provided a reference. Prefer this and just additionally use
             extra provided color_hint or size_hint arguments.
 
@@ -233,9 +262,9 @@ public class WidgetPrompts {
             Write the YAML to the current working directory with filename <uid>.yaml to the filesystem (the
             MCP runs server-side and createOrUpdateWidget reads from disk). Then
             call createOrUpdateWidget with that absolute path.
-            
+
             ## Step 5: Page
-            
+
             Create a test page for the Widget. Call createTestPageForWidget(uid) to do this.
             The user can use this to interact with the widget without settings the items
             in the widget development page.
@@ -283,7 +312,8 @@ public class WidgetPrompts {
             {description}
             """;
 
-    private static final String REFINE_WIDGET_TEMPLATE = """
+  private static final String REFINE_WIDGET_TEMPLATE =
+      """
             You are refining an existing OpenHAB Main UI widget. The user already
             has something working and wants a specific change — not a redesign.
 
@@ -341,7 +371,8 @@ public class WidgetPrompts {
             Requested change:  {change_request}
             """;
 
-    private static final String CREATE_PAGE_TEMPLATE = """
+  private static final String CREATE_PAGE_TEMPLATE =
+      """
             You are helping the user build an OpenHAB Main UI page that contains
             multiple widgets arranged on a canvas.
 

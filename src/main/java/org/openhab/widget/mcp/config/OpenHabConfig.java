@@ -6,30 +6,28 @@ import io.smallrye.config.WithDefault;
 @ConfigMapping(prefix = "openhab")
 public interface OpenHabConfig {
 
-    @WithDefault("http://localhost:8080")
-    String url();
+  @WithDefault("http://localhost:8080")
+  String url();
 
-    String apiToken();
+  String apiToken();
 
-    String username();
+  String username();
 
-    String password();
+  String password();
 
-    @WithDefault("/tmp/openhab-screenshots")
-    String outputDir();
+  @WithDefault("/tmp/openhab-screenshots")
+  String outputDir();
 
-    @WithDefault("1200")
-    int pageWidth();
+  @WithDefault("true")
+  boolean headless();
 
-    @WithDefault("800")
-    int pageHeight();
+  Dimension page();
 
-    @WithDefault("true")
-    boolean headless();
+  Dimension screen();
 
-    @WithDefault("1920")
-    int screenWidth();
+  interface Dimension {
+    int width();
 
-    @WithDefault("1280")
-    int screenHeight();
+    int height();
+  }
 }
