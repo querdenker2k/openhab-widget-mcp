@@ -12,14 +12,14 @@ import org.assertj.core.api.Assertions;
 
 public class ImageTestUtil {
 
-	@SneakyThrows
-	public static void compareWithReference(File res, File ref) {
-		BufferedImage reference = ImageIO.read(ref);
-		BufferedImage current = ImageIO.read(res);
+    @SneakyThrows
+    public static void compareWithReference(File res, File ref) {
+        BufferedImage reference = ImageIO.read(ref);
+        BufferedImage current = ImageIO.read(res);
 
-		ImageComparisonResult result = new ImageComparison(reference, current).setAllowingPercentOfDifferentPixels(1)
-				.setDifferenceRectangleColor(Color.RED).compareImages();
+        ImageComparisonResult result = new ImageComparison(reference, current).setAllowingPercentOfDifferentPixels(1)
+                .setDifferenceRectangleColor(Color.RED).compareImages();
 
-		Assertions.assertThat(result.getImageComparisonState()).isEqualTo(ImageComparisonState.MATCH);
-	}
+        Assertions.assertThat(result.getImageComparisonState()).isEqualTo(ImageComparisonState.MATCH);
+    }
 }

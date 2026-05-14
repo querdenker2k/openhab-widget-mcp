@@ -27,57 +27,57 @@ import org.openhab.widget.mcp.test.OpenHabTestResource;
 @QuarkusTestResource(OpenHabTestResource.class)
 class McpToolsTest {
 
-	private static final String WIDGET_UID = "RD_mcp_test_widget";
+    private static final String WIDGET_UID = "RD_mcp_test_widget";
 
-	@Inject
-	WidgetTools widgetTools;
+    @Inject
+    WidgetTools widgetTools;
 
-	@Inject
-	ItemTools itemTools;
+    @Inject
+    ItemTools itemTools;
 
-	@AfterEach
-	void tearDown() {
-		given().when().delete("/api/widgets/" + WIDGET_UID);
-	}
+    @AfterEach
+    void tearDown() {
+        given().when().delete("/api/widgets/" + WIDGET_UID);
+    }
 
-	@Test
-	void listWidgets_returnsJsonArray() {
-		assertThat(widgetTools.listWidgets()).startsWith("[");
-	}
+    @Test
+    void listWidgets_returnsJsonArray() {
+        assertThat(widgetTools.listWidgets()).startsWith("[");
+    }
 
-	@Test
-	void getWidget_unknownUid_returnsNotFoundMessage() {
-		assertThat(widgetTools.getWidget("does_not_exist_xyz")).containsIgnoringCase("not found");
-	}
+    @Test
+    void getWidget_unknownUid_returnsNotFoundMessage() {
+        assertThat(widgetTools.getWidget("does_not_exist_xyz")).containsIgnoringCase("not found");
+    }
 
-	@Test
-	void listItems_noFilter_returnsJsonArray() {
-		assertThat(itemTools.listItems(null)).startsWith("[");
-	}
+    @Test
+    void listItems_noFilter_returnsJsonArray() {
+        assertThat(itemTools.listItems(null)).startsWith("[");
+    }
 
-	@Test
-	void getItemState_unknownItem_returnsNotFoundMessage() {
-		assertThat(itemTools.getItemState("ItemThatDoesNotExist")).containsIgnoringCase("not found");
-	}
+    @Test
+    void getItemState_unknownItem_returnsNotFoundMessage() {
+        assertThat(itemTools.getItemState("ItemThatDoesNotExist")).containsIgnoringCase("not found");
+    }
 
-	@Test
-	void mcpSseEndpoint_respondsWithEventStream() throws Exception {
-		HttpClient client = HttpClient.newHttpClient();
-		HttpRequest request = HttpRequest.newBuilder()
-				.uri(URI.create("http://localhost:" + RestAssured.port + "/mcp/sse"))
-				.header("Accept", "text/event-stream").build();
+    @Test
+    void mcpSseEndpoint_respondsWithEventStream() throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + RestAssured.port + "/mcp/sse"))
+                .header("Accept", "text/event-stream").build();
 
-		HttpResponse<Stream<String>> response = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines()).get(5,
-				TimeUnit.SECONDS);
+        HttpResponse<Stream<String>> response = client.sendAsync(request, HttpResponse.BodyHandlers.ofLines()).get(5,
+                TimeUnit.SECONDS);
 
-		assertThat(response.statusCode()).isEqualTo(200);
-		assertThat(response.headers().firstValue("content-type").orElse("")).contains("text/event-stream");
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.headers().firstValue("content-type").orElse("")).contains("text/event-stream");
 
-		CompletableFuture<String> firstData = CompletableFuture
-				.supplyAsync(() -> response.body().filter(line -> line.startsWith("data:")).findFirst().orElse(""));
-		String event = firstData.get(5, TimeUnit.SECONDS);
-		response.body().close();
+        CompletableFuture<String> firstData = CompletableFuture
+                .supplyAsync(() -> response.body().filter(line -> line.startsWith("data:")).findFirst().orElse(""));
+        String event = firstData.get(5, TimeUnit.SECONDS);
+        response.body().close();
 
-		assertThat(event).startsWith("data:");
-	}
+        assertThat(event).startsWith("data:");
+    }
 }

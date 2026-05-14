@@ -8,17 +8,17 @@ import org.eclipse.microprofile.config.ConfigProvider;
 @Slf4j
 public class AuthRequestFilter implements ClientRequestFilter {
 
-	private final String staticAuthHeader;
+    private final String staticAuthHeader;
 
-	public AuthRequestFilter() {
-		String apiToken = ConfigProvider.getConfig().getOptionalValue("openhab.api-token", String.class).orElse("");
-		this.staticAuthHeader = apiToken.isBlank() ? "" : "Bearer " + apiToken;
-	}
+    public AuthRequestFilter() {
+        String apiToken = ConfigProvider.getConfig().getOptionalValue("openhab.api-token", String.class).orElse("");
+        this.staticAuthHeader = apiToken.isBlank() ? "" : "Bearer " + apiToken;
+    }
 
-	@Override
-	public void filter(ClientRequestContext ctx) {
-		if (!staticAuthHeader.isBlank()) {
-			ctx.getHeaders().putSingle("Authorization", staticAuthHeader);
-		}
-	}
+    @Override
+    public void filter(ClientRequestContext ctx) {
+        if (!staticAuthHeader.isBlank()) {
+            ctx.getHeaders().putSingle("Authorization", staticAuthHeader);
+        }
+    }
 }
