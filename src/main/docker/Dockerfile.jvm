@@ -27,11 +27,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY target/quarkus-app /app
-
-# Download Playwright browsers (Chromium) during build
+# Step 1: Copy libraries only to install Playwright browsers
+# This layer is cached as long as dependencies (lib/) don't change
+COPY target/quarkus-app/lib/ /app/lib/
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 RUN java -cp "/app/lib/main/*" com.microsoft.playwright.CLI install chromium chromium-headless-shell firefox webkit
+
+# Step 2: Copy the complete application
+# This includes app/, quarkus/ and the runner jar. 
+# Changing the app code will only invalidate this and subsequent layers.
+COPY target/quarkus-app/ /app/
 
 EXPOSE 8081
 
