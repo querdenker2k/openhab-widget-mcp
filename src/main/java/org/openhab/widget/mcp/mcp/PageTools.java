@@ -42,7 +42,7 @@ public class PageTools {
             A page should never created twice for the same widget. \
             Check before if there already a test page exist for this widget.""")
     public PageService.CreateOrUpdatePage createTestPageForWidget(
-            @ToolArg(description = "UID of the widget to embed, e.g. RD_car_charging_widget") String widgetUid,
+            @ToolArg(description = "UID of the widget to embed, e.g. Car_Charging") String widgetUid,
             @ToolArg(required = false, defaultValue = "", description = "Optional page label") String label,
             @ToolArg(required = false, defaultValue = "", description = "Optional page UID") String pageUid,
             @ToolArg(required = false, defaultValue = "{}", description = "Optional widget props JSON, e.g. {\"title\":\"Auto\"}") String propsJson) {
@@ -54,8 +54,7 @@ public class PageTools {
 
     @Tool(description = "Delete a page from OpenHAB by its UID.")
     @WrapBusinessError
-    public DeleteState deletePage(
-            @ToolArg(description = "The page UID to delete, e.g. RD_car_charging_widget") String uid) {
+    public DeleteState deletePage(@ToolArg(description = "The page UID to delete, e.g. Car_Charging") String uid) {
         return pageService.deletePage(uid);
     }
 

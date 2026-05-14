@@ -33,8 +33,7 @@ public class WidgetResource {
     @GET
     @Path("/{uid}")
     @Operation(summary = "Get a widget by UID")
-    public Response getWidget(
-            @Parameter(description = "Widget UID, e.g. RD_car_charging_widget") @PathParam("uid") String uid) {
+    public Response getWidget(@Parameter(description = "Widget UID, e.g. Car_Charging") @PathParam("uid") String uid) {
         Log.infof("REST getWidget: %s", uid);
         return Response.ok(widgetService.getWidget(uid)).build();
     }
