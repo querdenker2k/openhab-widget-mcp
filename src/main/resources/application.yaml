@@ -51,3 +51,5 @@ quarkus:
     category:
       "org.openhab":
         level: INFO
+      "com.microsoft.playwright":
+        level: INFO

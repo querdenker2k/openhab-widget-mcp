@@ -45,7 +45,7 @@ apt-get install libglib2.0-0t64 \
     libatspi2.0-0t64
 ```
 
-> **Note:** When using the **Docker image**, these dependencies are already pre-installed.
+> **Note:** When using the **Docker image**, these dependencies and the necessary browser binaries (Chromium) are already pre-installed.
 
 ## Configuration
 

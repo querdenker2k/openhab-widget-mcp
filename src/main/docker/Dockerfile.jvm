@@ -29,6 +29,10 @@ WORKDIR /app
 
 COPY target/quarkus-app /app
 
+# Download Playwright browsers (Chromium) during build
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
+RUN java -cp "/app/lib/main/*" com.microsoft.playwright.CLI install chromium chromium-headless-shell
+
 EXPOSE 8081
 
 ENV JAVA_OPTS="-Djava.util.logging.manager=org.jboss.logmanager.LogManager"
