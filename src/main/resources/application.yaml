@@ -4,8 +4,12 @@ openhab:
   username: ""
   password: ""
   output-dir: openhab-screenshots
-  page-width: 1200
-  page-height: 800
+  page:
+    width: 1280
+    height: 780
+  screen:
+    width: 1920
+    height: 1280
 
 quarkus:
   banner:
