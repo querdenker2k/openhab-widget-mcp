@@ -15,7 +15,7 @@ quarkus:
     registry: ghcr.io
     group: querdenker2k
     build: true
-    push: true
+    push: false
     image: "openhab-widget-mcp"
     tag: "${project.version}"
     builder: docker
