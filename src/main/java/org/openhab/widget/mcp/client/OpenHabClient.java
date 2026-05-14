@@ -42,6 +42,11 @@ public interface OpenHabClient {
     // --- Pages ---
 
     @GET
+    @Path("/ui/components/ui:page")
+    @Produces(MediaType.APPLICATION_JSON)
+    Response listPages();
+
+    @GET
     @Path("/ui/components/ui:page/{uid}")
     @Produces(MediaType.APPLICATION_JSON)
     Response getPage(@PathParam("uid") String uid);

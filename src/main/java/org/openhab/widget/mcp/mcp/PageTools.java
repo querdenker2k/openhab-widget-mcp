@@ -58,6 +58,18 @@ public class PageTools {
         return pageService.deletePage(uid);
     }
 
+    @Tool(description = "List all pages registered in OpenHAB. Returns a JSON array of page definitions.")
+    @WrapBusinessError
+    public String listPages() {
+        return pageService.listPages();
+    }
+
+    @Tool(description = "Get a specific page definition from OpenHAB as YAML by its UID.")
+    @WrapBusinessError
+    public String getPageAsYaml(@ToolArg(description = "The page UID, e.g. my_living_room_page") String uid) {
+        return pageService.getPageAsYaml(uid);
+    }
+
     @SneakyThrows
     @Tool(description = """
             Create or update an OpenHAB page with multiple widgets arranged on a canvas. \

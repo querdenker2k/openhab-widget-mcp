@@ -3,6 +3,7 @@ package org.openhab.widget.mcp.service;
 import static org.openhab.widget.mcp.util.RsUtil.safeInvoke;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import io.quarkus.logging.Log;
@@ -26,6 +27,7 @@ import org.openhab.widget.mcp.util.ImageUtil;
 @ApplicationScoped
 public class PageService {
     private final ObjectMapper jsonMapper = new ObjectMapper();
+    private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
     @Inject
     @RestClient
     OpenHabClient openHabClient;
@@ -46,6 +48,32 @@ public class PageService {
         } else {
             Log.warnf("deletePage: unexpected HTTP %d for '%s'", status, uid);
             throw new IllegalStateException("Error deleting page '%s': HTTP %d".formatted(uid, status));
+        }
+    }
+
+    public String listPages() {
+        Log.info("listPages");
+        Response response = safeInvoke(() -> openHabClient.listPages());
+        int status = response.getStatus();
+        String body = response.readEntity(String.class);
+        Log.infof("listPages: HTTP %d, %d chars", status, body.length());
+        return body;
+    }
+
+    public String getPageAsYaml(String uid) {
+        Log.infof("getPageAsYaml: %s", uid);
+        try {
+            Response response = safeInvoke(() -> openHabClient.getPage(uid));
+            int status = response.getStatus();
+            if (status == 404) {
+                Log.infof("getPageAsYaml: %s not found", uid);
+                return "Page not found: " + uid;
+            }
+            Map<String, Object> pageMap = response.readEntity(Map.class);
+            return yamlMapper.writeValueAsString(pageMap);
+        } catch (Exception e) {
+            Log.error("Error getting page: " + uid, e);
+            return "Error getting page: " + e.getMessage();
         }
     }
 

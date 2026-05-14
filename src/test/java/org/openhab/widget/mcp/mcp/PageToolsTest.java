@@ -29,6 +29,37 @@ public class PageToolsTest {
         }
     }
 
+    @Test
+    void testListPages() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+            createTestPageForWidget(client);
+
+            client.when().toolsCall("listPages", Map.of(), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                TextContent content = response.firstContent().asText();
+                Assertions.assertThat(content.text()).contains("TestWidget");
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
+    @Test
+    void testGetPageAsYaml() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+            createTestPageForWidget(client);
+
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", "TestWidget"), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                TextContent content = response.firstContent().asText();
+                Assertions.assertThat(content.text()).contains("uid: \"TestWidget\"");
+                Assertions.assertThat(content.text()).contains("component: \"oh-layout-page\"");
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
     private static void deletePage(McpAssured.McpStreamableTestClient client) {
         client.when().toolsCall("deletePage", Map.of("uid", "TestWidget"), response -> {
             Assertions.assertThat(response.isError()).isFalse();
