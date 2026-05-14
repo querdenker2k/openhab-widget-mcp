@@ -68,6 +68,12 @@ The image is automatically built and published to GitHub Container Registry (GHC
 ### Pull from GHCR
 
 ```bash
+docker pull ghcr.io/querdenker2k/openhab-widget-mcp:latest
+```
+
+oder für einen spezifischen Branch:
+
+```bash
 docker pull ghcr.io/querdenker2k/openhab-widget-mcp:main
 ```
 
@@ -118,7 +124,7 @@ version: '3.8'
 
 services:
   openhab-widget-mcp:
-    image: ghcr.io/querdenker2k/openhab-widget-mcp:main
+    image: ghcr.io/querdenker2k/openhab-widget-mcp:latest
     ports:
       - "8081:8081"
     environment:
