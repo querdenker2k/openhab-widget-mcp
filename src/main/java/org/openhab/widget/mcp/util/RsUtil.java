@@ -7,11 +7,11 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class RsUtil {
-  public static Response safeInvoke(Supplier<Response> call) {
-    try {
-      return call.get();
-    } catch (WebApplicationException e) {
-      return e.getResponse();
-    }
-  }
+	public static Response safeInvoke(Supplier<Response> call) {
+		try {
+			return call.get();
+		} catch (WebApplicationException e) {
+			return e.getResponse();
+		}
+	}
 }

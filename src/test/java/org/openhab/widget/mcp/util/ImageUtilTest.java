@@ -10,21 +10,20 @@ import org.junit.jupiter.api.Test;
 
 class ImageUtilTest {
 
-  @SneakyThrows
-  @Test
-  void isCompletelyWhite() {
-    Assertions.assertThat(
-            ImageUtil.isCompletelyWhite(
-                ImageIO.read(IOUtils.resourceToURL("/white_image.png")), 0, true))
-        .isTrue();
-  }
+	@SneakyThrows
+	@Test
+	void isCompletelyWhite() {
+		Assertions
+				.assertThat(
+						ImageUtil.isCompletelyWhite(ImageIO.read(IOUtils.resourceToURL("/white_image.png")), 0, true))
+				.isTrue();
+	}
 
-  @SneakyThrows
-  @Test
-  void isNotCompletelyWhite() {
-    Assertions.assertThat(
-            ImageUtil.isCompletelyWhite(
-                ImageIO.read(IOUtils.resourceToURL("/not_white_image.png")), 0, true))
-        .isFalse();
-  }
+	@SneakyThrows
+	@Test
+	void isNotCompletelyWhite() {
+		Assertions.assertThat(
+				ImageUtil.isCompletelyWhite(ImageIO.read(IOUtils.resourceToURL("/not_white_image.png")), 0, true))
+				.isFalse();
+	}
 }

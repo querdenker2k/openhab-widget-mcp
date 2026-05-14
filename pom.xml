@@ -199,11 +199,11 @@
                 <version>2.44.3</version>
                 <configuration>
                     <java>
-                        <googleJavaFormat>
-                            <version>1.22.0</version>
-                            <style>GOOGLE</style>
-                        </googleJavaFormat>
+                        <eclipse>
+                            <version>4.31</version>
+                        </eclipse>
                         <removeUnusedImports/>
+                        <importOrder/>
                     </java>
                 </configuration>
                 <executions>
