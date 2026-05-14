@@ -9,6 +9,32 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
+    <name>openhab-widget-mcp</name>
+    <description>Model Context Protocol (MCP) Server for OpenHAB Widgets</description>
+    <url>https://github.com/querdenker2k/openhab-widget-mcp</url>
+
+    <licenses>
+        <license>
+            <name>Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>querdenker2k</id>
+            <name>Robert Delbrück</name>
+            <url>https://github.com/querdenker2k</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git://github.com/querdenker2k/openhab-widget-mcp.git</connection>
+        <developerConnection>scm:git:ssh://github.com:querdenker2k/openhab-widget-mcp.git</developerConnection>
+        <url>https://github.com/querdenker2k/openhab-widget-mcp/tree/main</url>
+    </scm>
+
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

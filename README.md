@@ -63,9 +63,30 @@ java -jar target/quarkus-app/quarkus-run.jar
 
 ## Docker Container
 
-The image is prebuild and can be pulled from rd86/openhab-widget-mcp:latest
+The image is automatically built and published to GitHub Container Registry (GHCR) on every push to the main branch.
 
-### Build the Container
+### Pull from GHCR
+
+```bash
+docker pull ghcr.io/querdenker2k/openhab-widget-mcp:main
+```
+
+### Run the Container
+
+```bash
+docker run -d \
+  --name openhab-widget-mcp \
+  -p 8081:8081 \
+  -e OPENHAB_URL=http://your-openhab:8080 \
+  -e OPENHAB_API_TOKEN=your-api-token \
+  -e OPENHAB_USERNAME=your-username \
+  -e OPENHAB_PASSWORD=your-password \
+  -e OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots \
+  -v /tmp/openhab-screenshots:/tmp/openhab-screenshots \
+  ghcr.io/querdenker2k/openhab-widget-mcp:main
+```
+
+### Build the Container Locally
 
 ```bash
 # Build using Quarkus Docker support
@@ -97,7 +118,7 @@ version: '3.8'
 
 services:
   openhab-widget-mcp:
-    image: openhab-widget-mcp:latest
+    image: ghcr.io/querdenker2k/openhab-widget-mcp:main
     ports:
       - "8081:8081"
     environment:
