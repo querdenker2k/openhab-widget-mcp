@@ -200,6 +200,40 @@ public class PageService {
         }
     }
 
+    @SneakyThrows
+    public CreateOrUpdatePage createPageFromYaml(String yaml) {
+        Log.info("createPageFromYaml");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> page = yamlMapper.readValue(yaml, Map.class);
+        String uid = (String) page.get("uid");
+        if (uid == null || uid.isBlank()) {
+            throw new IllegalArgumentException("YAML page definition must contain a 'uid' field");
+        }
+
+        String jsonBody = jsonMapper.writeValueAsString(page);
+
+        Response checkResponse = safeInvoke(() -> openHabClient.getPage(uid));
+        if (checkResponse.getStatus() == 200) {
+            Response updateResponse = safeInvoke(() -> openHabClient.updatePage(uid, jsonBody));
+            int updateStatus = updateResponse.getStatus();
+            if (updateStatus == 200) {
+                Log.infof("createPageFromYaml: updated '%s' HTTP %d", uid, updateStatus);
+                return new CreateOrUpdatePage(uid, CreateOrUpdateState.UPDATED);
+            } else {
+                throw new IllegalStateException("Error updating page '%s': HTTP %d".formatted(uid, updateStatus));
+            }
+        } else {
+            Response createResponse = safeInvoke(() -> openHabClient.createPage(jsonBody));
+            int status = createResponse.getStatus();
+            if (status == 200 || status == 201) {
+                Log.infof("createPageFromYaml: created '%s' HTTP %d", uid, status);
+                return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
+            } else {
+                throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
+            }
+        }
+    }
+
     public String screenshotPage(String uid) throws IOException {
         synchronized (browserService) {
             Log.infof("screenshotPage: uid=%s", uid);

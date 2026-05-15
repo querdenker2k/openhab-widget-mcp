@@ -4,3 +4,5 @@
 *.iml
 openhab-screenshots
 .claude
+*.actual.png
+*.diff.png

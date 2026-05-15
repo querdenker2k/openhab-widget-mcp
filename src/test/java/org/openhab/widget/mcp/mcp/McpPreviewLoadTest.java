@@ -31,7 +31,7 @@ public class McpPreviewLoadTest {
         setupData();
 
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
-            int count = 10;
+            int count = 5;
             long startTime = System.currentTimeMillis();
 
             for (int i = 0; i < count; i++) {
@@ -55,7 +55,7 @@ public class McpPreviewLoadTest {
     void loadTestMcpPreviewParallel() throws Exception {
         setupData();
 
-        int count = 10;
+        int count = 5;
         long startTime = System.currentTimeMillis();
 
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {

@@ -54,7 +54,7 @@ jobs:
           mvn versions:set -DnewVersion=$VERSION -DgenerateBackupPoms=false
 
       - name: Build with Maven
-        run: mvn package -DskipTests
+        run: mvn package
 
       - name: Log in to the Container registry
         if: github.event_name != 'pull_request'

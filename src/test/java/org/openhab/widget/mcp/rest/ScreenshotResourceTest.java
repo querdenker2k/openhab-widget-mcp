@@ -3,12 +3,7 @@ package org.openhab.widget.mcp.rest;
 import static io.restassured.RestAssured.config;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.fail;
 
-import com.github.romankh3.image.comparison.ImageComparison;
-import com.github.romankh3.image.comparison.ImageComparisonUtil;
-import com.github.romankh3.image.comparison.model.ImageComparisonResult;
-import com.github.romankh3.image.comparison.model.ImageComparisonState;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.config.HttpClientConfig;
@@ -16,12 +11,11 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openhab.widget.mcp.test.ImageTestUtil;
 import org.openhab.widget.mcp.test.OpenHabTestResource;
 
 /**
@@ -43,13 +37,6 @@ class ScreenshotResourceTest {
     private static final String PAGE_UID = "screenshot_test_page";
     static final String TEST_ITEM = "ScreenshotTestItem";
     static final String TEST_ITEM_STATE = "ItemValueXYZ";
-
-    /**
-     * Maximum percentage of differing pixels (0-100) tolerated vs. the reference.
-     */
-    private static final double MAX_DIFF_PERCENT = 10.0;
-
-    private static final Path REFERENCE_DIR = Path.of("src/test/resources/screenshots");
 
     @BeforeEach
     void setUp() {
@@ -109,21 +96,21 @@ class ScreenshotResourceTest {
     void screenshotWidget_default_matchesReference() throws IOException {
         byte[] png = screenshotWidget("{}");
         assertValidPng(png);
-        assertMatchesReference(png, "widget_" + WIDGET_UID + ".png");
+        ImageTestUtil.assertMatchesReference(png, "widget_" + WIDGET_UID + ".png");
     }
 
     @Test
     void screenshotWidget_withCustomTitleProp_matchesReference() throws IOException {
         byte[] png = screenshotWidget("{\"title\":\"PropsTestCustomTitleXYZ\"}");
         assertValidPng(png);
-        assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_title.png");
+        ImageTestUtil.assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_title.png");
     }
 
     @Test
     void screenshotWidget_withItemProp_matchesReference() throws IOException {
         byte[] png = screenshotWidget("{\"statusItem\":\"" + TEST_ITEM + "\"}");
         assertValidPng(png);
-        assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_item.png");
+        ImageTestUtil.assertMatchesReference(png, "widget_" + WIDGET_UID + "_with_item.png");
     }
 
     @Test
@@ -135,7 +122,7 @@ class ScreenshotResourceTest {
                 .extract().asByteArray();
 
         assertValidPng(png);
-        assertMatchesReference(png, "page_" + PAGE_UID + ".png");
+        ImageTestUtil.assertMatchesReference(png, "page_" + PAGE_UID + ".png");
     }
 
     private static byte[] screenshotWidget(String propsJson) {
@@ -159,38 +146,4 @@ class ScreenshotResourceTest {
         assertThat(img.getHeight()).isGreaterThan(0);
     }
 
-    /**
-     * Reference comparison via romankh3/image-comparison. Creates the reference on
-     * first run; on mismatch writes the actual screenshot and a diff image (red
-     * rectangles around changed regions) next to the reference and fails with the
-     * diff percent.
-     */
-    private static void assertMatchesReference(byte[] currentBytes, String fileName) throws IOException {
-        Path referenceFile = REFERENCE_DIR.resolve(fileName);
-
-        if (!Files.exists(referenceFile)) {
-            Files.createDirectories(REFERENCE_DIR);
-            Files.write(referenceFile, currentBytes);
-            System.out.println("[Screenshot test] Created reference: " + referenceFile);
-            return;
-        }
-
-        BufferedImage reference = ImageIO.read(referenceFile.toFile());
-        BufferedImage current = ImageIO.read(new ByteArrayInputStream(currentBytes));
-
-        ImageComparisonResult result = new ImageComparison(reference, current)
-                .setAllowingPercentOfDifferentPixels(MAX_DIFF_PERCENT).setDifferenceRectangleColor(Color.RED)
-                .compareImages();
-
-        if (result.getImageComparisonState() != ImageComparisonState.MATCH) {
-            String stem = fileName.endsWith(".png") ? fileName.substring(0, fileName.length() - 4) : fileName;
-            Path diffFile = referenceFile.resolveSibling(stem + ".diff.png");
-            Path actualFile = referenceFile.resolveSibling(stem + ".actual.png");
-            ImageComparisonUtil.saveImage(diffFile.toFile(), result.getResult());
-            Files.write(actualFile, currentBytes);
-            fail("Screenshot does not match reference '%s' (state=%s, diff=%.2f%%, limit=%.1f%%). "
-                    + "Actual saved to '%s', diff to '%s'.", fileName, result.getImageComparisonState(),
-                    result.getDifferencePercent(), MAX_DIFF_PERCENT, actualFile, diffFile);
-        }
-    }
 }

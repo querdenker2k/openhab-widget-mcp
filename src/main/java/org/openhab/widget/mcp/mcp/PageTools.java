@@ -90,4 +90,14 @@ public class PageTools {
                 });
         return pageService.createComplexPage(pageUid, label, placements);
     }
+
+    @Tool(description = """
+            Create or update an OpenHAB page from a complete YAML definition. \
+            The YAML must contain the 'uid' field. \
+            Idempotent: updates the page if it already exists, otherwise creates it.""")
+    @WrapBusinessError
+    public PageService.CreateOrUpdatePage createPageFromYaml(
+            @ToolArg(description = "The complete YAML definition of the page") String yaml) {
+        return pageService.createPageFromYaml(yaml);
+    }
 }
