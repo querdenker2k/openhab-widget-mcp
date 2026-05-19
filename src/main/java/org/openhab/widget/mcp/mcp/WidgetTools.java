@@ -9,6 +9,7 @@ import lombok.SneakyThrows;
 import org.openhab.widget.mcp.model.DeleteState;
 import org.openhab.widget.mcp.service.WidgetService;
 
+@SuppressWarnings("unused")
 @ApplicationScoped
 public class WidgetTools {
 
@@ -32,6 +33,14 @@ public class WidgetTools {
     public WidgetService.CreateOrUpdateWidget createOrUpdateWidget(
             @ToolArg(description = "Absolute path to the widget YAML file, e.g. main-ui-widgets/MyWidget.yaml") String filePath) {
         return widgetService.createOrUpdateWidget(filePath);
+    }
+
+    @WrapBusinessError
+    @Tool(description = "Upload a widget to OpenHAB from YAML content. "
+            + "Creates the widget if it does not exist, updates it otherwise.")
+    public WidgetService.CreateOrUpdateWidget createOrUpdateWidgetFromContent(
+            @ToolArg(description = "Complete content of the widget YAML.") String yaml) {
+        return widgetService.createOrUpdateWidgetFromYaml(yaml);
     }
 
     @Tool(description = "Delete a widget from OpenHAB by its UID.")

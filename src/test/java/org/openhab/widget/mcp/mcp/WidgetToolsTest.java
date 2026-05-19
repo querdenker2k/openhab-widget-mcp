@@ -46,9 +46,8 @@ public class WidgetToolsTest {
     }
 
     static void deleteWidget(McpAssured.McpStreamableTestClient client, String uid) {
-        client.when().toolsCall("deleteWidget", Map.of("uid", uid), response -> {
-            Assertions.assertThat(response.isError()).isFalse();
-        }).thenAssertResults();
+        client.when().toolsCall("deleteWidget", Map.of("uid", uid),
+                response -> Assertions.assertThat(response.isError()).isFalse()).thenAssertResults();
     }
 
     static void deleteWidget(McpAssured.McpStreamableTestClient client) {
@@ -60,7 +59,8 @@ public class WidgetToolsTest {
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
 
             client.when().toolsList(page -> {
-                Assertions.assertThat(page.size()).isEqualTo(21);
+                System.out.println("[DEBUG_LOG] Tools size: " + page.size());
+                Assertions.assertThat(page.size()).isEqualTo(22);
 
                 McpAssured.ToolInfo tool = page.findByName("listWidgets");
                 Assertions.assertThat(tool.description()).isEqualTo(
