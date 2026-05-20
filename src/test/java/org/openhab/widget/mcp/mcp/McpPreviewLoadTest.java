@@ -12,7 +12,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.openhab.widget.mcp.test.OpenHabTestResource;
@@ -24,6 +27,12 @@ public class McpPreviewLoadTest {
 
     private static final String WIDGET_UID = "RD_mcp_load_test_widget";
     private static final String PAGE_UID = "mcp_load_test_page";
+
+    @BeforeEach
+    @SneakyThrows
+    void clean() {
+        Awaitility.setDefaultTimeout(30, TimeUnit.SECONDS);
+    }
 
     @Test
     @Timeout(value = 10, unit = TimeUnit.MINUTES)

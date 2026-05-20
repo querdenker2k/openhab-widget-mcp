@@ -5,7 +5,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.File;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
 import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
@@ -64,9 +63,9 @@ public class PageResource {
             @Parameter(description = "Page UID, e.g. my_car_page") @PathParam("uid") String uid) {
         Log.infof("REST screenshotPage: %s", uid);
         try {
-            String path = pageService.screenshotPage(uid);
-            File file = new File(path);
-            return Response.ok(file).header("Content-Disposition", "inline; filename=\"page_" + uid + ".png\"").build();
+            byte[] screenshot = pageService.screenshotPage(uid);
+            return Response.ok(screenshot).header("Content-Disposition", "inline; filename=\"page_" + uid + ".png\"")
+                    .build();
         } catch (Exception e) {
             Log.error("Error creating screenshot for page " + uid, e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.getMessage()))

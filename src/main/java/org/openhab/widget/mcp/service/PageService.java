@@ -11,8 +11,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -234,16 +232,11 @@ public class PageService {
         }
     }
 
-    public String screenshotPage(String uid) throws IOException {
+    public byte[] screenshotPage(String uid) throws IOException {
         synchronized (browserService) {
             Log.infof("screenshotPage: uid=%s", uid);
             Page p = browserService.createPage();
             try {
-                Path outputDir = Path.of(config.outputDir());
-                if (!Files.exists(outputDir)) {
-                    Files.createDirectories(outputDir);
-                }
-
                 String targetUrl = config.url() + "/page/" + uid;
                 String expectedPath = "/page/" + uid;
 
@@ -252,18 +245,15 @@ public class PageService {
                 Log.info("Waiting for page to settle");
                 p.waitForTimeout(3000);
 
-                Path outputPath = outputDir.resolve("page_" + uid + ".png");
-
                 Locator locator = p.locator(".oh-canvas-layout");
 
                 // 2. Screenshot des gesamten Frame-Inhalts (body) machen
-                locator.screenshot(new Locator.ScreenshotOptions().setPath(outputPath));
+                byte[] screenshot = locator.screenshot(new Locator.ScreenshotOptions());
 
-                Log.infof("Screenshot saved to: %s", outputPath.toAbsolutePath());
-                if (ImageUtil.isCompletelyWhite(outputPath, 0, true)) {
+                if (ImageUtil.isCompletelyWhite(screenshot, 0, true)) {
                     throw new IllegalStateException("Screenshot is completely white");
                 }
-                return outputPath.toAbsolutePath().toString();
+                return screenshot;
             } finally {
                 p.close();
             }

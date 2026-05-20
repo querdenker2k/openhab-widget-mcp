@@ -1,10 +1,13 @@
 package org.openhab.widget.mcp.mcp;
 
+import io.quarkiverse.mcp.server.ImageContent;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkiverse.mcp.server.ToolResponse;
 import io.quarkiverse.mcp.server.WrapBusinessError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Base64;
 import lombok.SneakyThrows;
 import org.openhab.widget.mcp.model.DeleteState;
 import org.openhab.widget.mcp.service.WidgetService;
@@ -53,11 +56,17 @@ public class WidgetTools {
     @Tool(description = """
             Take a screenshot of a widget in the OpenHAB developer UI preview. \
             Optionally sets widget props before taking the screenshot. \
-            Returns the absolute path to the saved PNG file.""")
+            Returns the screenshot as a PNG image.""")
     @WrapBusinessError
-    public String previewWidget(@ToolArg(description = "The widget UID to preview, e.g. Car_Charging") String uid,
+    public ToolResponse previewWidget(@ToolArg(description = "The widget UID to preview, e.g. Car_Charging") String uid,
             @ToolArg(required = false, defaultValue = "{}", description = "JSON object with widget props to set before screenshotting, "
                     + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson) {
-        return widgetService.screenshotWidget(uid, propsJson);
+        try {
+            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson);
+            String base64 = Base64.getEncoder().encodeToString(screenshot);
+            return ToolResponse.success(new ImageContent(base64, "image/png"));
+        } catch (Exception e) {
+            return ToolResponse.error("Error taking widget preview screenshot: " + e.getMessage());
+        }
     }
 }

@@ -2,11 +2,14 @@ package org.openhab.widget.mcp.mcp;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkiverse.mcp.server.ImageContent;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
+import io.quarkiverse.mcp.server.ToolResponse;
 import io.quarkiverse.mcp.server.WrapBusinessError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.Base64;
 import java.util.List;
 import lombok.SneakyThrows;
 import org.openhab.widget.mcp.config.OpenHabConfig;
@@ -23,13 +26,15 @@ public class PageTools {
     OpenHabConfig config;
 
     @Tool(description = "Take a screenshot of an OpenHAB page as it appears in the browser. "
-            + "Returns the absolute path to the saved PNG file.")
-    public String screenshotPage(@ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
+            + "Returns the screenshot as a PNG image.")
+    public ToolResponse screenshotPage(
+            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
         try {
-            String path = pageService.screenshotPage(uid);
-            return "Screenshot saved to: " + path;
+            byte[] screenshot = pageService.screenshotPage(uid);
+            String base64 = Base64.getEncoder().encodeToString(screenshot);
+            return ToolResponse.success(new ImageContent(base64, "image/png"));
         } catch (Exception e) {
-            return "Error taking page screenshot: " + e.getMessage();
+            return ToolResponse.error("Error taking page screenshot: " + e.getMessage());
         }
     }
 

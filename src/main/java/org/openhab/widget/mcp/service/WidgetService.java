@@ -133,7 +133,7 @@ public class WidgetService {
         }
     }
 
-    public String screenshotWidget(String uid, String propsJson) throws IOException {
+    public byte[] screenshotWidget(String uid, String propsJson) throws IOException {
         synchronized (browserService) {
             Log.infof("screenshotWidget: uid=%s, props=%s", uid, propsJson);
             Page editorPage = browserService.createPage();
@@ -155,20 +155,14 @@ public class WidgetService {
                     Log.warnf("Landed on %s instead of %s after applying props", finalPath, expectedPath);
                 }
 
-                Path outputDir = Path.of(config.outputDir());
-                Files.createDirectories(outputDir);
-                Path screenshotPath = outputDir.resolve("widget_" + uid + ".png");
-
                 Locator locator = editorPage.locator(".card");
-                locator.screenshot(new Locator.ScreenshotOptions().setPath(screenshotPath));
+                byte[] screenshot = locator.screenshot(new Locator.ScreenshotOptions());
 
-                Log.infof("Screenshot saved to: %s", screenshotPath.toAbsolutePath());
-
-                if (ImageUtil.isCompletelyWhite(screenshotPath, 0, true)) {
+                if (ImageUtil.isCompletelyWhite(screenshot, 0, true)) {
                     throw new IllegalStateException("Screenshot is completely white");
                 }
 
-                return screenshotPath.toAbsolutePath().toString();
+                return screenshot;
             } finally {
                 editorPage.close();
             }

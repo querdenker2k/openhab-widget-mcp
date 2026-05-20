@@ -5,7 +5,6 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
 import org.eclipse.microprofile.openapi.annotations.Operation;
@@ -80,9 +79,9 @@ public class WidgetResource {
             @Parameter(description = "JSON props object, e.g. {\"title\":\"Auto\"}. Leave empty for no props.") @QueryParam("props") String propsJson) {
         Log.infof("REST screenshotWidget: %s, props=%s", uid, propsJson);
         try {
-            String path = widgetService.screenshotWidget(uid, propsJson != null ? propsJson : "{}");
-            File file = new File(path);
-            return Response.ok(file).header("Content-Disposition", "inline; filename=\"" + uid + ".png\"").build();
+            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson != null ? propsJson : "{}");
+            return Response.ok(screenshot).header("Content-Disposition", "inline; filename=\"" + uid + ".png\"")
+                    .build();
         } catch (Exception e) {
             Log.error("Error creating screenshot for widget " + uid, e);
             return Response.serverError().type(MediaType.APPLICATION_JSON).entity(Map.of("error", e.getMessage()))

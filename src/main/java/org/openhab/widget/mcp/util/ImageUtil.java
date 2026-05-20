@@ -2,6 +2,7 @@ package org.openhab.widget.mcp.util;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import javax.imageio.ImageIO;
@@ -51,12 +52,18 @@ public class ImageUtil {
         return true;
     }
 
+    public static boolean isCompletelyWhite(byte[] imageBytes, int tolerance, boolean checkAlpha) {
+        try (var in = new ByteArrayInputStream(imageBytes)) {
+            BufferedImage read = ImageIO.read(in);
+            return isCompletelyWhite(read, tolerance, checkAlpha);
+        } catch (IOException e) {
+            throw new RuntimeException("Error reading image bytes", e);
+        }
+    }
+
     @SneakyThrows
     public static boolean isCompletelyWhite(Path path, int tolerance, boolean checkAlpha) {
         byte[] bytes = Files.readAllBytes(path);
-        try (var in = new ByteArrayInputStream(bytes)) {
-            BufferedImage read = ImageIO.read(in);
-            return isCompletelyWhite(read, tolerance, checkAlpha);
-        }
+        return isCompletelyWhite(bytes, tolerance, checkAlpha);
     }
 }

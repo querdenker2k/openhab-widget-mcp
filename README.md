@@ -59,7 +59,6 @@ All configuration is done via `application.yaml` or environment variables. The f
 | `openhab.api-token` | String | *(empty)* | API token for OpenHAB authentication |
 | `openhab.username` | String | *(empty)* | Username for OpenHAB authentication |
 | `openhab.password` | String | *(empty)* | Password for OpenHAB authentication |
-| `openhab.output-dir` | String | `/tmp/openhab-screenshots` | Directory for saved screenshots |
 
 
 ### Environment Variable Mapping
@@ -71,7 +70,6 @@ export OPENHAB_URL=http://your-openhab:8080
 export OPENHAB_API_TOKEN=your-api-token
 export OPENHAB_USERNAME=your-username
 export OPENHAB_PASSWORD=your-password
-export OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots
 ```
 
 ## Local Development
@@ -118,7 +116,6 @@ docker run -d \
   -e OPENHAB_API_TOKEN=your-api-token \
   -e OPENHAB_USERNAME=your-username \
   -e OPENHAB_PASSWORD=your-password \
-  -e OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots \
   -v /tmp/openhab-screenshots:/tmp/openhab-screenshots \
   ghcr.io/querdenker2k/openhab-widget-mcp:main
 ```
@@ -143,8 +140,6 @@ docker run -d \
   -e OPENHAB_API_TOKEN=your-api-token \
       - OPENHAB_USERNAME=your-username \
       - OPENHAB_PASSWORD=your-password \
-  -e OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots \
-  -v /tmp/openhab-screenshots:/tmp/openhab-screenshots \
   openhab-widget-mcp:latest
 ```
 
@@ -163,7 +158,6 @@ services:
       - OPENHAB_API_TOKEN=your-api-token
       - OPENHAB_USERNAME=your-username
       - OPENHAB_PASSWORD=your-password
-      - OPENHAB_OUTPUT_DIR=/tmp/openhab-screenshots
     volumes:
       - screenshots:/tmp/openhab-screenshots
     restart: unless-stopped
@@ -180,7 +174,6 @@ volumes:
 | `OPENHAB_API_TOKEN` | Yes | *(empty)* | API token for authentication |
 | `OPENHAB_USERNAME` | Yes | *(empty)* | Username for authentication |
 | `OPENHAB_PASSWORD` | Yes | *(empty)* | Password for authentication |
-| `OPENHAB_OUTPUT_DIR` | No | `/tmp/openhab-screenshots` | Screenshot output directory |
 
 > \* You must provide a valid `OPENHAB_URL` pointing to your OpenHAB instance.
 

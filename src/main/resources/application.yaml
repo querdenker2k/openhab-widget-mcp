@@ -3,7 +3,6 @@ openhab:
   api-token: ""
   username: ""
   password: ""
-  output-dir: openhab-screenshots
   page:
     width: 1280
     height: 780

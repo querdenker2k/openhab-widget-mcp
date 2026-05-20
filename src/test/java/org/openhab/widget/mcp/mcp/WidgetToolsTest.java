@@ -2,11 +2,11 @@ package org.openhab.widget.mcp.mcp;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.quarkiverse.mcp.server.ImageContent;
 import io.quarkiverse.mcp.server.TextContent;
 import io.quarkiverse.mcp.server.test.McpAssured;
 import io.quarkus.test.junit.QuarkusTest;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import lombok.SneakyThrows;
@@ -126,20 +126,24 @@ public class WidgetToolsTest {
         }
     }
 
-    @SneakyThrows
     @Test
     void testPreviewWidget() {
-        String res = "openhab-screenshots/widget_TestWidget.png";
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
             createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
             client.when().toolsCall("previewWidget", Map.of("uid", WIDGET_UID), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
-                TextContent content = response.firstContent().asText();
-                Assertions.assertThat(content.text()).endsWith(res);
+                ImageContent content = (ImageContent) response.firstContent();
+                Assertions.assertThat(content.mimeType()).isEqualTo("image/png");
+                Assertions.assertThat(content.data()).isNotEmpty();
+
+                byte[] screenshot = Base64.getDecoder().decode(content.data());
+                try {
+                    ImageTestUtil.assertMatchesReference(screenshot, "widget_" + WIDGET_UID + ".png");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             }).thenAssertResults();
             client.disconnect();
         }
-
-        ImageTestUtil.assertMatchesReference(Files.readAllBytes(Path.of(res)), "widget_" + WIDGET_UID + ".png");
     }
 }
