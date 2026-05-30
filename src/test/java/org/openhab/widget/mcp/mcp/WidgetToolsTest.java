@@ -60,7 +60,7 @@ public class WidgetToolsTest {
 
             client.when().toolsList(page -> {
                 System.out.println("[DEBUG_LOG] Tools size: " + page.size());
-                Assertions.assertThat(page.size()).isEqualTo(22);
+                Assertions.assertThat(page.size()).isEqualTo(24);
 
                 McpAssured.ToolInfo tool = page.findByName("listWidgets");
                 Assertions.assertThat(tool.description()).isEqualTo(
