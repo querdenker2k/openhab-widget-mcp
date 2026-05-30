@@ -15,6 +15,9 @@ public interface OpenHabConfig {
 
     String password();
 
+    @WithDefault("/tmp/openhab-screenshots")
+    String outputDir();
+
     @WithDefault("true")
     boolean headless();
 

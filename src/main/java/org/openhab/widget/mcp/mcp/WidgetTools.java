@@ -7,8 +7,11 @@ import io.quarkiverse.mcp.server.ToolResponse;
 import io.quarkiverse.mcp.server.WrapBusinessError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import lombok.SneakyThrows;
+import org.openhab.widget.mcp.config.OpenHabConfig;
 import org.openhab.widget.mcp.model.DeleteState;
 import org.openhab.widget.mcp.service.WidgetService;
 
@@ -18,6 +21,9 @@ public class WidgetTools {
 
     @Inject
     WidgetService widgetService;
+
+    @Inject
+    OpenHabConfig config;
 
     @WrapBusinessError
     @Tool(description = "List all custom widgets registered in OpenHAB. Returns a JSON array of widget definitions.")
@@ -68,5 +74,22 @@ public class WidgetTools {
         } catch (Exception e) {
             return ToolResponse.error("Error taking widget preview screenshot: " + e.getMessage());
         }
+    }
+
+    @SneakyThrows
+    @Tool(description = """
+            Take a screenshot of a widget in the OpenHAB developer UI preview and save it to a file. \
+            Optionally sets widget props before taking the screenshot. \
+            Returns the absolute path to the saved PNG file.""")
+    @WrapBusinessError
+    public String previewWidgetToFile(@ToolArg(description = "The widget UID to preview, e.g. Car_Charging") String uid,
+            @ToolArg(required = false, defaultValue = "{}", description = "JSON object with widget props to set before screenshotting, "
+                    + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson) {
+        byte[] screenshot = widgetService.screenshotWidget(uid, propsJson);
+        Path outputDir = Path.of(config.outputDir());
+        Files.createDirectories(outputDir);
+        Path screenshotPath = outputDir.resolve("widget_" + uid + ".png");
+        Files.write(screenshotPath, screenshot);
+        return screenshotPath.toAbsolutePath().toString();
     }
 }

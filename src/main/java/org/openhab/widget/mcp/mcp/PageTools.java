@@ -9,6 +9,8 @@ import io.quarkiverse.mcp.server.ToolResponse;
 import io.quarkiverse.mcp.server.WrapBusinessError;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
 import lombok.SneakyThrows;
@@ -36,6 +38,19 @@ public class PageTools {
         } catch (Exception e) {
             return ToolResponse.error("Error taking page screenshot: " + e.getMessage());
         }
+    }
+
+    @SneakyThrows
+    @Tool(description = "Take a screenshot of an OpenHAB page as it appears in the browser and save it to a file. "
+            + "Returns the absolute path to the saved PNG file.")
+    public String screenshotPageToFile(
+            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
+        byte[] screenshot = pageService.screenshotPage(uid);
+        Path outputDir = Path.of(config.outputDir());
+        Files.createDirectories(outputDir);
+        Path outputPath = outputDir.resolve("page_" + uid + ".png");
+        Files.write(outputPath, screenshot);
+        return outputPath.toAbsolutePath().toString();
     }
 
     @Tool(description = """
