@@ -6,11 +6,13 @@ import io.quarkiverse.mcp.server.ImageContent;
 import io.quarkiverse.mcp.server.TextContent;
 import io.quarkiverse.mcp.server.test.McpAssured;
 import io.quarkus.test.junit.QuarkusTest;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import lombok.SneakyThrows;
+import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.Assertions;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
@@ -135,32 +137,17 @@ public class PageToolsTest {
         }
     }
 
+    @SneakyThrows
     @Test
     void testScreenshotResponsivePage() {
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
-            String yaml = """
-                    uid: "TestResponsivePage"
-                    component: "oh-layout-page"
-                    config:
-                      label: "Test Responsive Page"
-                    tags: []
-                    props:
-                      parameters: []
-                      parameterGroups: []
-                    slots:
-                      default:
-                        - component: "oh-block"
-                          config:
-                            title: "Hello Block"
-                          slots:
-                            default: []
-                    """;
+            String yaml = IOUtils.resourceToString("/responsive_page.yml", StandardCharsets.UTF_8);
 
             client.when().toolsCall("createPageFromYaml", Map.of("yaml", yaml), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
             }).thenAssertResults();
 
-            client.when().toolsCall("screenshotPage", Map.of("uid", "TestResponsivePage"), response -> {
+            client.when().toolsCall("screenshotPage", Map.of("uid", "minimal_responsive"), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
                 ImageContent content = (ImageContent) response.firstContent();
                 Assertions.assertThat(content.mimeType()).isEqualTo("image/png");

@@ -1,0 +1,87 @@
+uid: minimal_responsive
+tags: []
+props:
+  parameters: []
+  parameterGroups: []
+component: oh-layout-page
+config:
+  label: "Minimal (Responsive)"
+  hideNavbar: true
+  sidebar: true
+slots:
+  default:
+    - component: oh-block
+      config:
+        title: "Statische Demo"
+      slots:
+        default:
+          - component: oh-grid-row
+            config: {}
+            slots:
+              default:
+                - component: oh-grid-col
+                  config: { width: "100", medium: "50", large: "33" }
+                  slots:
+                    default:
+                      - component: oh-label-cell
+                        config:
+                          title: "Karte 1"
+                          label: "Erster Text"
+                          icon: oh:text
+                          color: blue
+                - component: oh-grid-col
+                  config: { width: "100", medium: "50", large: "33" }
+                  slots:
+                    default:
+                      - component: oh-label-cell
+                        config:
+                          title: "Karte 2"
+                          label: "Zweiter Text"
+                          icon: oh:text
+                          color: green
+                - component: oh-grid-col
+                  config: { width: "100", medium: "50", large: "33" }
+                  slots:
+                    default:
+                      - component: oh-label-cell
+                        config:
+                          title: "Karte 3"
+                          label: "Dritter Text"
+                          icon: oh:text
+                          color: orange
+    - component: oh-block
+      config:
+        title: "Liste"
+      slots:
+        default:
+          - component: oh-grid-row
+            config: {}
+            slots:
+              default:
+                - component: oh-grid-col
+                  config: { width: "100", medium: "100", large: "50" }
+                  slots:
+                    default:
+                      - component: oh-list-card
+                        config:
+                          title: "Statische Liste"
+                        slots:
+                          default:
+                            - component: oh-label-item
+                              config:
+                                title: "Eintrag A"
+                                label: "Wert A"
+                                icon: oh:text
+                            - component: oh-label-item
+                              config:
+                                title: "Eintrag B"
+                                label: "Wert B"
+                                icon: oh:text
+                            - component: oh-label-item
+                              config:
+                                title: "Eintrag C"
+                                label: "Wert C"
+                                icon: oh:text
+  masonry: []
+  grid: []
+  canvas: []
