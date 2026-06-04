@@ -134,4 +134,46 @@ public class PageToolsTest {
             client.disconnect();
         }
     }
+
+    @Test
+    void testScreenshotResponsivePage() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            String yaml = """
+                    uid: "TestResponsivePage"
+                    component: "oh-layout-page"
+                    config:
+                      label: "Test Responsive Page"
+                    tags: []
+                    props:
+                      parameters: []
+                      parameterGroups: []
+                    slots:
+                      default:
+                        - component: "oh-block"
+                          config:
+                            title: "Hello Block"
+                          slots:
+                            default: []
+                    """;
+
+            client.when().toolsCall("createPageFromYaml", Map.of("yaml", yaml), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+            }).thenAssertResults();
+
+            client.when().toolsCall("screenshotPage", Map.of("uid", "TestResponsivePage"), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                ImageContent content = (ImageContent) response.firstContent();
+                Assertions.assertThat(content.mimeType()).isEqualTo("image/png");
+                Assertions.assertThat(content.data()).isNotEmpty();
+
+                byte[] screenshot = Base64.getDecoder().decode(content.data());
+                try {
+                    ImageTestUtil.assertMatchesReference(screenshot, "page_TestResponsivePage.png");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
 }

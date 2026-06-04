@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.TimeoutError;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -242,13 +244,46 @@ public class PageService {
 
                 browserService.navigateAuthenticated(p, targetUrl, expectedPath);
 
-                Log.info("Waiting for page to settle");
-                p.waitForTimeout(3000);
+                Log.info("Waiting for page content");
+                String contentSelector = String.join(", ", ".oh-canvas-layout", ".oh-block", ".oh-grid-row",
+                        ".masonry-page", ".oh-masonry");
+                try {
+                    p.waitForSelector(contentSelector,
+                            new Page.WaitForSelectorOptions().setState(WaitForSelectorState.VISIBLE).setTimeout(15000));
+                } catch (TimeoutError e) {
+                    Log.warnf("screenshotPage: no known content selector matched for page '%s' – capturing anyway",
+                            uid);
+                }
 
-                Locator locator = p.locator(".oh-canvas-layout");
+                p.waitForTimeout(1200);
 
-                // 2. Screenshot des gesamten Frame-Inhalts (body) machen
-                byte[] screenshot = locator.screenshot(new Locator.ScreenshotOptions());
+                Locator canvasLayout = p.locator(".oh-canvas-layout");
+                if (canvasLayout.count() > 0) {
+                    byte[] screenshot = canvasLayout.screenshot(new Locator.ScreenshotOptions());
+                    if (ImageUtil.isCompletelyWhite(screenshot, 0, true)) {
+                        throw new IllegalStateException("Screenshot is completely white");
+                    }
+                    return screenshot;
+                }
+
+                // Responsive pages: clip from x-position of first content element to exclude
+                // sidebar
+                @SuppressWarnings("unchecked")
+                Map<String, Object> clip = (Map<String, Object>) p.evaluate("""
+                        () => {
+                            const el = document.querySelector('.oh-block, .oh-grid-row, .masonry-page, .oh-masonry');
+                            if (!el) return null;
+                            const r = el.getBoundingClientRect();
+                            return { x: Math.round(r.left), y: 0,
+                                     width: Math.round(window.innerWidth - r.left), height: window.innerHeight };
+                        }
+                        """);
+                Page.ScreenshotOptions opts = new Page.ScreenshotOptions();
+                if (clip != null && ((Number) clip.get("x")).intValue() > 0) {
+                    opts.setClip(((Number) clip.get("x")).doubleValue(), ((Number) clip.get("y")).doubleValue(),
+                            ((Number) clip.get("width")).doubleValue(), ((Number) clip.get("height")).doubleValue());
+                }
+                byte[] screenshot = p.screenshot(opts);
 
                 if (ImageUtil.isCompletelyWhite(screenshot, 0, true)) {
                     throw new IllegalStateException("Screenshot is completely white");
