@@ -9,6 +9,12 @@ openhab:
   screen:
     width: 1920
     height: 1280
+  tablet:
+    width: 1024
+    height: 768
+  phone:
+    width: 390
+    height: 844
 
 quarkus:
   banner:

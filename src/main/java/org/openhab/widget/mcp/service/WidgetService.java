@@ -22,6 +22,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.openhab.widget.mcp.client.OpenHabClient;
 import org.openhab.widget.mcp.config.OpenHabConfig;
 import org.openhab.widget.mcp.model.DeleteState;
+import org.openhab.widget.mcp.model.ViewportPreset;
 import org.openhab.widget.mcp.util.ImageUtil;
 
 @ApplicationScoped
@@ -133,10 +134,11 @@ public class WidgetService {
         }
     }
 
-    public byte[] screenshotWidget(String uid, String propsJson) throws IOException {
+    public byte[] screenshotWidget(String uid, String propsJson, String device) throws IOException {
         synchronized (browserService) {
-            Log.infof("screenshotWidget: uid=%s, props=%s", uid, propsJson);
-            Page editorPage = browserService.createPage();
+            Log.infof("screenshotWidget: uid=%s, props=%s, device=%s", uid, propsJson, device);
+            OpenHabConfig.Dimension viewport = ViewportPreset.fromString(device).dimension(config);
+            Page editorPage = browserService.createPage(viewport.width(), viewport.height());
             try {
                 String expectedPath = "/developer/widgets/" + uid;
                 browserService.navigateAuthenticated(editorPage, config.url() + expectedPath, expectedPath);

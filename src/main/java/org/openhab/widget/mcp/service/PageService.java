@@ -22,6 +22,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.openhab.widget.mcp.client.OpenHabClient;
 import org.openhab.widget.mcp.config.OpenHabConfig;
 import org.openhab.widget.mcp.model.DeleteState;
+import org.openhab.widget.mcp.model.ViewportPreset;
 import org.openhab.widget.mcp.util.ImageUtil;
 
 @ApplicationScoped
@@ -234,10 +235,11 @@ public class PageService {
         }
     }
 
-    public byte[] screenshotPage(String uid) throws IOException {
+    public byte[] screenshotPage(String uid, String device) throws IOException {
         synchronized (browserService) {
-            Log.infof("screenshotPage: uid=%s", uid);
-            Page p = browserService.createPage();
+            Log.infof("screenshotPage: uid=%s, device=%s", uid, device);
+            OpenHabConfig.Dimension viewport = ViewportPreset.fromString(device).dimension(config);
+            Page p = browserService.createPage(viewport.width(), viewport.height());
             try {
                 String targetUrl = config.url() + "/page/" + uid;
                 String expectedPath = "/page/" + uid;

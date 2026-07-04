@@ -59,11 +59,11 @@ public class PageResource {
     @Path("/{uid}/screenshot")
     @Produces("image/png")
     @Operation(summary = "Screenshot a page", description = "Opens the page in the browser and returns a PNG screenshot.")
-    public Response screenshotPage(
-            @Parameter(description = "Page UID, e.g. my_car_page") @PathParam("uid") String uid) {
-        Log.infof("REST screenshotPage: %s", uid);
+    public Response screenshotPage(@Parameter(description = "Page UID, e.g. my_car_page") @PathParam("uid") String uid,
+            @Parameter(description = "Viewport to emulate: desktop, tablet, or phone. Defaults to desktop.") @QueryParam("device") String device) {
+        Log.infof("REST screenshotPage: %s, device=%s", uid, device);
         try {
-            byte[] screenshot = pageService.screenshotPage(uid);
+            byte[] screenshot = pageService.screenshotPage(uid, device);
             return Response.ok(screenshot).header("Content-Disposition", "inline; filename=\"page_" + uid + ".png\"")
                     .build();
         } catch (Exception e) {

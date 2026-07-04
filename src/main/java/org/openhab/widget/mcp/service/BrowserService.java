@@ -85,8 +85,14 @@ public class BrowserService {
     }
 
     public synchronized Page createPage() {
+        return createPage(config.screen().width(), config.screen().height());
+    }
+
+    public synchronized Page createPage(int width, int height) {
         ensureBrowser();
-        return context.newPage();
+        Page page = context.newPage();
+        page.setViewportSize(width, height);
+        return page;
     }
 
     public synchronized void navigateAuthenticated(Page p, String targetUrl, String expectedPath) {

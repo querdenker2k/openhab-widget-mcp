@@ -66,9 +66,11 @@ public class WidgetTools {
     @WrapBusinessError
     public ToolResponse previewWidget(@ToolArg(description = "The widget UID to preview, e.g. Car_Charging") String uid,
             @ToolArg(required = false, defaultValue = "{}", description = "JSON object with widget props to set before screenshotting, "
-                    + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson) {
+                    + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Viewport to emulate: "
+                    + "\"desktop\", \"tablet\", or \"phone\". Defaults to desktop.") String device) {
         try {
-            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson);
+            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson, device);
             String base64 = Base64.getEncoder().encodeToString(screenshot);
             return ToolResponse.success(new ImageContent(base64, "image/png"));
         } catch (Exception e) {
@@ -84,11 +86,14 @@ public class WidgetTools {
     @WrapBusinessError
     public String previewWidgetToFile(@ToolArg(description = "The widget UID to preview, e.g. Car_Charging") String uid,
             @ToolArg(required = false, defaultValue = "{}", description = "JSON object with widget props to set before screenshotting, "
-                    + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson) {
-        byte[] screenshot = widgetService.screenshotWidget(uid, propsJson);
+                    + "e.g. {\"title\": \"Auto\", \"cablePluggedInItem\": \"MyItem\"}.") String propsJson,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Viewport to emulate: "
+                    + "\"desktop\", \"tablet\", or \"phone\". Defaults to desktop.") String device) {
+        byte[] screenshot = widgetService.screenshotWidget(uid, propsJson, device);
         Path outputDir = Path.of(config.outputDir());
         Files.createDirectories(outputDir);
-        Path screenshotPath = outputDir.resolve("widget_" + uid + ".png");
+        String suffix = (device == null || device.isBlank() || "desktop".equalsIgnoreCase(device)) ? "" : "_" + device;
+        Path screenshotPath = outputDir.resolve("widget_" + uid + suffix + ".png");
         Files.write(screenshotPath, screenshot);
         return screenshotPath.toAbsolutePath().toString();
     }

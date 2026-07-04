@@ -30,9 +30,11 @@ public class PageTools {
     @Tool(description = "Take a screenshot of an OpenHAB page as it appears in the browser. "
             + "Returns the screenshot as a PNG image.")
     public ToolResponse screenshotPage(
-            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
+            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Viewport to emulate: "
+                    + "\"desktop\", \"tablet\", or \"phone\". Defaults to desktop.") String device) {
         try {
-            byte[] screenshot = pageService.screenshotPage(uid);
+            byte[] screenshot = pageService.screenshotPage(uid, device);
             String base64 = Base64.getEncoder().encodeToString(screenshot);
             return ToolResponse.success(new ImageContent(base64, "image/png"));
         } catch (Exception e) {
@@ -44,11 +46,14 @@ public class PageTools {
     @Tool(description = "Take a screenshot of an OpenHAB page as it appears in the browser and save it to a file. "
             + "Returns the absolute path to the saved PNG file.")
     public String screenshotPageToFile(
-            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid) {
-        byte[] screenshot = pageService.screenshotPage(uid);
+            @ToolArg(description = "The page UID to screenshot, e.g. my_car_page") String uid,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Viewport to emulate: "
+                    + "\"desktop\", \"tablet\", or \"phone\". Defaults to desktop.") String device) {
+        byte[] screenshot = pageService.screenshotPage(uid, device);
         Path outputDir = Path.of(config.outputDir());
         Files.createDirectories(outputDir);
-        Path outputPath = outputDir.resolve("page_" + uid + ".png");
+        String suffix = (device == null || device.isBlank() || "desktop".equalsIgnoreCase(device)) ? "" : "_" + device;
+        Path outputPath = outputDir.resolve("page_" + uid + suffix + ".png");
         Files.write(outputPath, screenshot);
         return outputPath.toAbsolutePath().toString();
     }

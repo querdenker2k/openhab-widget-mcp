@@ -25,6 +25,10 @@ public interface OpenHabConfig {
 
     Dimension screen();
 
+    Dimension tablet();
+
+    Dimension phone();
+
     interface Dimension {
         int width();
 

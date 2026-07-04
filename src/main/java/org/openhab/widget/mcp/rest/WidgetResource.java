@@ -76,10 +76,11 @@ public class WidgetResource {
     @Produces("image/png")
     @Operation(summary = "Screenshot widget preview", description = "Opens the widget in the OpenHAB developer UI, optionally sets props, and returns a PNG screenshot.")
     public Response screenshotWidget(@Parameter(description = "Widget UID") @PathParam("uid") String uid,
-            @Parameter(description = "JSON props object, e.g. {\"title\":\"Auto\"}. Leave empty for no props.") @QueryParam("props") String propsJson) {
-        Log.infof("REST screenshotWidget: %s, props=%s", uid, propsJson);
+            @Parameter(description = "JSON props object, e.g. {\"title\":\"Auto\"}. Leave empty for no props.") @QueryParam("props") String propsJson,
+            @Parameter(description = "Viewport to emulate: desktop, tablet, or phone. Defaults to desktop.") @QueryParam("device") String device) {
+        Log.infof("REST screenshotWidget: %s, props=%s, device=%s", uid, propsJson, device);
         try {
-            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson != null ? propsJson : "{}");
+            byte[] screenshot = widgetService.screenshotWidget(uid, propsJson != null ? propsJson : "{}", device);
             return Response.ok(screenshot).header("Content-Disposition", "inline; filename=\"" + uid + ".png\"")
                     .build();
         } catch (Exception e) {
