@@ -11,10 +11,13 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.openhab.widget.mcp.test.ImageTestUtil;
 import org.openhab.widget.mcp.test.OpenHabTestResource;
 
@@ -115,21 +118,55 @@ class ScreenshotResourceTest {
 
     @Test
     void screenshotPage_matchesReference() throws IOException {
-        byte[] png = given()
-                .config(config().httpClient(HttpClientConfig.httpClientConfig().setParam("http.socket.timeout", 120_000)
-                        .setParam("http.connection.timeout", 30_000)))
-                .when().get("/api/pages/" + PAGE_UID + "/screenshot").then().statusCode(200).contentType("image/png")
-                .extract().asByteArray();
-
+        byte[] png = screenshotPage("desktop");
         assertValidPng(png);
         ImageTestUtil.assertMatchesReference(png, "page_" + PAGE_UID + ".png");
     }
 
+    @TestFactory
+    Stream<DynamicTest> screenshotWidget_perDevice_matchesReference() {
+        return Stream.of("desktop", "tablet", "phone").map(device -> DynamicTest.dynamicTest("device=" + device, () -> {
+            byte[] png = screenshotWidget("{}", device);
+            assertValidPng(png);
+            ImageTestUtil.assertMatchesReference(png, "widget_" + WIDGET_UID + "_" + device + ".png");
+        }));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> screenshotPage_perDevice_matchesReference() {
+        return Stream.of("desktop", "tablet", "phone").map(device -> DynamicTest.dynamicTest("device=" + device, () -> {
+            byte[] png = screenshotPage(device);
+            assertValidPng(png);
+            ImageTestUtil.assertMatchesReference(png, "page_" + PAGE_UID + "_" + device + ".png");
+        }));
+    }
+
+    @Test
+    void screenshotWidget_invalidDevice_returnsError() {
+        given().config(config().httpClient(HttpClientConfig.httpClientConfig().setParam("http.socket.timeout", 120_000)
+                .setParam("http.connection.timeout", 30_000))).queryParam("props", "{}")
+                .queryParam("device", "smartwatch").when().get("/api/widgets/" + WIDGET_UID + "/screenshot").then()
+                .statusCode(500).body("error", org.hamcrest.Matchers.containsString("smartwatch"));
+    }
+
     private static byte[] screenshotWidget(String propsJson) {
+        return screenshotWidget(propsJson, "desktop");
+    }
+
+    private static byte[] screenshotWidget(String propsJson, String device) {
         return given()
                 .config(config().httpClient(HttpClientConfig.httpClientConfig().setParam("http.socket.timeout", 120_000)
                         .setParam("http.connection.timeout", 30_000)))
-                .queryParam("props", propsJson).when().get("/api/widgets/" + WIDGET_UID + "/screenshot").then()
+                .queryParam("props", propsJson).queryParam("device", device).when()
+                .get("/api/widgets/" + WIDGET_UID + "/screenshot").then().statusCode(200).contentType("image/png")
+                .extract().asByteArray();
+    }
+
+    private static byte[] screenshotPage(String device) {
+        return given()
+                .config(config().httpClient(HttpClientConfig.httpClientConfig().setParam("http.socket.timeout", 120_000)
+                        .setParam("http.connection.timeout", 30_000)))
+                .queryParam("device", device).when().get("/api/pages/" + PAGE_UID + "/screenshot").then()
                 .statusCode(200).contentType("image/png").extract().asByteArray();
     }
 
