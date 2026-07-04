@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.config.HttpClientConfig;
+import jakarta.inject.Inject;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -18,6 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.openhab.widget.mcp.config.OpenHabConfig;
+import org.openhab.widget.mcp.model.ViewportPreset;
 import org.openhab.widget.mcp.test.ImageTestUtil;
 import org.openhab.widget.mcp.test.OpenHabTestResource;
 
@@ -40,6 +43,9 @@ class ScreenshotResourceTest {
     private static final String PAGE_UID = "screenshot_test_page";
     static final String TEST_ITEM = "ScreenshotTestItem";
     static final String TEST_ITEM_STATE = "ItemValueXYZ";
+
+    @Inject
+    OpenHabConfig config;
 
     @BeforeEach
     void setUp() {
@@ -128,6 +134,7 @@ class ScreenshotResourceTest {
         return Stream.of("desktop", "tablet", "phone").map(device -> DynamicTest.dynamicTest("device=" + device, () -> {
             byte[] png = screenshotWidget("{}", device);
             assertValidPng(png);
+            assertWidthWithinViewport(png, device);
             ImageTestUtil.assertMatchesReference(png, "widget_" + WIDGET_UID + "_" + device + ".png");
         }));
     }
@@ -137,6 +144,7 @@ class ScreenshotResourceTest {
         return Stream.of("desktop", "tablet", "phone").map(device -> DynamicTest.dynamicTest("device=" + device, () -> {
             byte[] png = screenshotPage(device);
             assertValidPng(png);
+            assertWidthWithinViewport(png, device);
             ImageTestUtil.assertMatchesReference(png, "page_" + PAGE_UID + "_" + device + ".png");
         }));
     }
@@ -168,6 +176,14 @@ class ScreenshotResourceTest {
                         .setParam("http.connection.timeout", 30_000)))
                 .queryParam("device", device).when().get("/api/pages/" + PAGE_UID + "/screenshot").then()
                 .statusCode(200).contentType("image/png").extract().asByteArray();
+    }
+
+    private void assertWidthWithinViewport(byte[] bytes, String device) throws IOException {
+        int expectedMaxWidth = ViewportPreset.fromString(device).dimension(config).width();
+        BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
+        assertThat(img.getWidth())
+                .as("screenshot width for device '%s' (configured viewport width %d)", device, expectedMaxWidth)
+                .isLessThanOrEqualTo(expectedMaxWidth);
     }
 
     private static void assertValidPng(byte[] bytes) throws IOException {
