@@ -19,7 +19,7 @@ public enum ViewportPreset {
 
     public OpenHabConfig.Dimension dimension(OpenHabConfig config) {
         return switch (this) {
-            case DESKTOP -> config.screen();
+            case DESKTOP -> config.desktop();
             case TABLET -> config.tablet();
             case PHONE -> config.phone();
         };

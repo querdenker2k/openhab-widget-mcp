@@ -23,7 +23,7 @@ public interface OpenHabConfig {
 
     Dimension page();
 
-    Dimension screen();
+    Dimension desktop();
 
     Dimension tablet();
 

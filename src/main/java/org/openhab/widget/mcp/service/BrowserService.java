@@ -11,6 +11,7 @@ import jakarta.inject.Inject;
 import java.net.URI;
 import java.util.List;
 import org.openhab.widget.mcp.config.OpenHabConfig;
+import org.openhab.widget.mcp.model.ViewportPreset;
 
 /**
  * Manages the Playwright infrastructure: Chromium instance, BrowserContext, and
@@ -77,15 +78,17 @@ public class BrowserService {
             browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(config.headless())
                     .setArgs(List.of("--no-sandbox", "--disable-dev-shm-usage")));
 
+            OpenHabConfig.Dimension defaultViewport = ViewportPreset.DESKTOP.dimension(config);
             context = browser.newContext(
-                    new Browser.NewContextOptions().setViewportSize(config.screen().width(), config.screen().height()));
+                    new Browser.NewContextOptions().setViewportSize(defaultViewport.width(), defaultViewport.height()));
 
-            Log.info("Browser launched (%sx%s)".formatted(config.screen().width(), config.screen().height()));
+            Log.info("Browser launched (%sx%s)".formatted(defaultViewport.width(), defaultViewport.height()));
         }
     }
 
     public synchronized Page createPage() {
-        return createPage(config.screen().width(), config.screen().height());
+        OpenHabConfig.Dimension defaultViewport = ViewportPreset.DESKTOP.dimension(config);
+        return createPage(defaultViewport.width(), defaultViewport.height());
     }
 
     public synchronized Page createPage(int width, int height) {

@@ -6,7 +6,7 @@ openhab:
   page:
     width: 1280
     height: 780
-  screen:
+  desktop:
     width: 1920
     height: 1280
   tablet:
