@@ -75,11 +75,16 @@ public class PageTools {
             @ToolArg(required = false, defaultValue = "canvas", description = "Page layout: "
                     + "\"canvas\" (fixed absolute-pixel canvas, desktop/tablet-oriented) or "
                     + "\"grid\" (responsive block/grid layout that reflows for narrow screens — "
-                    + "use for mobile/phone previews). Defaults to canvas.") String layout) {
+                    + "use for mobile/phone previews). Defaults to canvas.") String layout,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Target display size for the page's "
+                    + "canvas: \"desktop\" (default), \"tablet\", or \"phone\". Only affects \"canvas\" layout "
+                    + "(sets the page's screen width/height to match); ignored for \"grid\" layout, which is "
+                    + "already responsive. Pass the same value to screenshotPage's device argument to preview "
+                    + "accurately.") String device) {
         String resolvedPageUid = (pageUid == null || pageUid.isBlank()) ? widgetUid : pageUid;
         String resolvedLabel = (label == null || label.isBlank()) ? widgetUid : label;
         String resolvedProps = (propsJson == null || propsJson.isBlank()) ? "{}" : propsJson;
-        return pageService.createOrUpdatePage(resolvedPageUid, resolvedLabel, widgetUid, resolvedProps, layout);
+        return pageService.createOrUpdatePage(resolvedPageUid, resolvedLabel, widgetUid, resolvedProps, layout, device);
     }
 
     @Tool(description = "Delete a page from OpenHAB by its UID.")

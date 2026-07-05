@@ -138,6 +138,23 @@ public class PageToolsTest {
     }
 
     @Test
+    void testCreateTestPageForWidget_canvasPhoneDevice_setsPhoneSizedCanvas() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+
+            client.when().toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "device", "phone"),
+                    response -> Assertions.assertThat(response.isError()).isFalse()).thenAssertResults();
+
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", PAGE_UID), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                String yaml = response.firstContent().asText().text();
+                Assertions.assertThat(yaml).contains("screenWidth: 390", "screenHeight: 844");
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
+    @Test
     void testCreateTestPageForWidget_gridLayout_producesResponsiveStructure() {
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
             WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);

@@ -81,12 +81,14 @@ public class PageService {
 
     @SneakyThrows
     public CreateOrUpdatePage createOrUpdatePage(String uid, String label, String widgetUid, String propsJson,
-            String layout) {
-        Log.infof("createOrUpdatePage: uid=%s, label=%s, widgetUid=%s, layout=%s", uid, label, widgetUid, layout);
+            String layout, String device) {
+        Log.infof("createOrUpdatePage: uid=%s, label=%s, widgetUid=%s, layout=%s, device=%s", uid, label, widgetUid,
+                layout, device);
         @SuppressWarnings("unchecked")
         Map<String, Object> props = propsJson == null || propsJson.isBlank()
                 ? Map.of()
                 : jsonMapper.readValue(propsJson, Map.class);
+        OpenHabConfig.Dimension canvasSize = resolvePageCanvasDimension(device);
 
         Map<String, Object> widgetRef = new LinkedHashMap<>();
         widgetRef.put("component", "widget:" + widgetUid);
@@ -104,18 +106,32 @@ public class PageService {
         } else {
             page.put("config",
                     Map.of("label", label, "layoutType", "fixed", "fixedType", "canvas", "gridEnable", true,
-                            "screenWidth", config.page().width(), "screenHeight", config.page().height(), "scale",
-                            false, "sidebar", true));
-            page.put("slots", buildCanvasSlots(widgetRef));
+                            "screenWidth", canvasSize.width(), "screenHeight", canvasSize.height(), "scale", false,
+                            "sidebar", true));
+            page.put("slots", buildCanvasSlots(widgetRef, canvasSize));
         }
 
         return upsertPage(uid, page, "createOrUpdatePage");
     }
 
-    private Map<String, Object> buildCanvasSlots(Map<String, Object> widgetRef) {
+    /**
+     * Resolves the page canvas size for a device preset. "desktop" keeps using the
+     * dedicated {@code openhab.page} default (unrelated to the browser viewport
+     * used for screenshotting) for backward compatibility; "tablet"/"phone" reuse
+     * the same dimensions as {@link ViewportPreset}.
+     */
+    private OpenHabConfig.Dimension resolvePageCanvasDimension(String device) {
+        return switch (ViewportPreset.fromString(device)) {
+            case DESKTOP -> config.page();
+            case TABLET -> config.tablet();
+            case PHONE -> config.phone();
+        };
+    }
+
+    private Map<String, Object> buildCanvasSlots(Map<String, Object> widgetRef, OpenHabConfig.Dimension canvasSize) {
         Map<String, Object> canvasItem = new LinkedHashMap<>();
         canvasItem.put("component", "oh-canvas-item");
-        canvasItem.put("config", Map.of("x", 0, "y", 0, "h", config.page().height(), "w", config.page().width()));
+        canvasItem.put("config", Map.of("x", 0, "y", 0, "h", canvasSize.height(), "w", canvasSize.width()));
         canvasItem.put("slots", Map.of("default", List.of(widgetRef)));
 
         Map<String, Object> canvasLayer = new LinkedHashMap<>();
