@@ -63,6 +63,18 @@ class PageResourceTest {
                 is("UPDATED"));
     }
 
+    @Test
+    void createTestPage_withGridLayout_createsSuccessfully() {
+        given().queryParam("layout", "grid").when().post("/api/pages/" + WIDGET_UID + "/testpage").then()
+                .statusCode(200).body("message.state", is("CREATED"));
+    }
+
+    @Test
+    void createTestPage_withInvalidLayout_returnsError() {
+        given().queryParam("layout", "circle").when().post("/api/pages/" + WIDGET_UID + "/testpage").then()
+                .statusCode(500);
+    }
+
     private void deletePage(String uid) {
         given().baseUri(OpenHabTestResource.openHabUrl)
                 .header("Authorization", "Bearer " + OpenHabTestResource.accessToken).when()

@@ -22,6 +22,7 @@ import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.openhab.widget.mcp.client.OpenHabClient;
 import org.openhab.widget.mcp.config.OpenHabConfig;
 import org.openhab.widget.mcp.model.DeleteState;
+import org.openhab.widget.mcp.model.PageLayout;
 import org.openhab.widget.mcp.model.ViewportPreset;
 import org.openhab.widget.mcp.util.ImageUtil;
 
@@ -79,8 +80,9 @@ public class PageService {
     }
 
     @SneakyThrows
-    public CreateOrUpdatePage createOrUpdatePage(String uid, String label, String widgetUid, String propsJson) {
-        Log.infof("createOrUpdatePage: uid=%s, label=%s, widgetUid=%s", uid, label, widgetUid);
+    public CreateOrUpdatePage createOrUpdatePage(String uid, String label, String widgetUid, String propsJson,
+            String layout) {
+        Log.infof("createOrUpdatePage: uid=%s, label=%s, widgetUid=%s, layout=%s", uid, label, widgetUid, layout);
         @SuppressWarnings("unchecked")
         Map<String, Object> props = propsJson == null || propsJson.isBlank()
                 ? Map.of()
@@ -90,6 +92,27 @@ public class PageService {
         widgetRef.put("component", "widget:" + widgetUid);
         widgetRef.put("config", props);
 
+        Map<String, Object> page = new LinkedHashMap<>();
+        page.put("uid", uid);
+        page.put("component", "oh-layout-page");
+        page.put("tags", List.of());
+        page.put("props", Map.of("parameters", List.of(), "parameterGroups", List.of()));
+
+        if (PageLayout.fromString(layout) == PageLayout.GRID) {
+            page.put("config", Map.of("label", label, "hideNavbar", true, "sidebar", true));
+            page.put("slots", buildGridSlots(label, widgetRef));
+        } else {
+            page.put("config",
+                    Map.of("label", label, "layoutType", "fixed", "fixedType", "canvas", "gridEnable", true,
+                            "screenWidth", config.page().width(), "screenHeight", config.page().height(), "scale",
+                            false, "sidebar", true));
+            page.put("slots", buildCanvasSlots(widgetRef));
+        }
+
+        return upsertPage(uid, page, "createOrUpdatePage");
+    }
+
+    private Map<String, Object> buildCanvasSlots(Map<String, Object> widgetRef) {
         Map<String, Object> canvasItem = new LinkedHashMap<>();
         canvasItem.put("component", "oh-canvas-item");
         canvasItem.put("config", Map.of("x", 0, "y", 0, "h", config.page().height(), "w", config.page().width()));
@@ -100,18 +123,30 @@ public class PageService {
         canvasLayer.put("config", Map.of());
         canvasLayer.put("slots", Map.of("default", List.of(canvasItem)));
 
-        Map<String, Object> page = new LinkedHashMap<>();
-        page.put("uid", uid);
-        page.put("component", "oh-layout-page");
-        page.put("config",
-                Map.of("label", label, "layoutType", "fixed", "fixedType", "canvas", "gridEnable", true, "screenWidth",
-                        config.page().width(), "screenHeight", config.page().height(), "scale", false, "sidebar",
-                        true));
-        page.put("tags", List.of());
-        page.put("props", Map.of("parameters", List.of(), "parameterGroups", List.of()));
-        page.put("slots",
-                Map.of("default", List.of(), "masonry", List.of(), "grid", List.of(), "canvas", List.of(canvasLayer)));
+        return Map.of("default", List.of(), "masonry", List.of(), "grid", List.of(), "canvas", List.of(canvasLayer));
+    }
 
+    private Map<String, Object> buildGridSlots(String label, Map<String, Object> widgetRef) {
+        Map<String, Object> gridCol = new LinkedHashMap<>();
+        gridCol.put("component", "oh-grid-col");
+        gridCol.put("config", Map.of("width", "100"));
+        gridCol.put("slots", Map.of("default", List.of(widgetRef)));
+
+        Map<String, Object> gridRow = new LinkedHashMap<>();
+        gridRow.put("component", "oh-grid-row");
+        gridRow.put("config", Map.of());
+        gridRow.put("slots", Map.of("default", List.of(gridCol)));
+
+        Map<String, Object> block = new LinkedHashMap<>();
+        block.put("component", "oh-block");
+        block.put("config", Map.of("title", label));
+        block.put("slots", Map.of("default", List.of(gridRow)));
+
+        return Map.of("default", List.of(block), "masonry", List.of(), "grid", List.of(), "canvas", List.of());
+    }
+
+    @SneakyThrows
+    private CreateOrUpdatePage upsertPage(String uid, Map<String, Object> page, String logPrefix) {
         String jsonBody = jsonMapper.writeValueAsString(page);
 
         Response checkResponse = safeInvoke(() -> openHabClient.getPage(uid));
@@ -119,20 +154,20 @@ public class PageService {
             Response updateResponse = safeInvoke(() -> openHabClient.updatePage(uid, jsonBody));
             int updateStatus = updateResponse.getStatus();
             if (updateStatus == 200) {
-                Log.infof("createOrUpdatePage: updated '%s' HTTP %d", uid, updateStatus);
+                Log.infof("%s: updated '%s' HTTP %d", logPrefix, uid, updateStatus);
                 return new CreateOrUpdatePage(uid, CreateOrUpdateState.UPDATED);
             } else {
-                Log.warnf("createOrUpdatePage: update failed for '%s' HTTP %d", uid, updateStatus);
+                Log.warnf("%s: update failed for '%s' HTTP %d", logPrefix, uid, updateStatus);
                 throw new IllegalStateException("Error updating page '%s': HTTP %d".formatted(uid, updateStatus));
             }
         } else {
             Response createResponse = safeInvoke(() -> openHabClient.createPage(jsonBody));
             int status = createResponse.getStatus();
             if (status == 200 || status == 201) {
-                Log.infof("createOrUpdatePage: created '%s' HTTP %d", uid, status);
+                Log.infof("%s: created '%s' HTTP %d", logPrefix, uid, status);
                 return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
             } else {
-                Log.warnf("createOrUpdatePage: create failed for '%s' HTTP %d", uid, status);
+                Log.warnf("%s: create failed for '%s' HTTP %d", logPrefix, uid, status);
                 throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
             }
         }
@@ -177,28 +212,7 @@ public class PageService {
         page.put("slots",
                 Map.of("default", List.of(), "masonry", List.of(), "grid", List.of(), "canvas", List.of(canvasLayer)));
 
-        String jsonBody = jsonMapper.writeValueAsString(page);
-
-        Response checkResponse = safeInvoke(() -> openHabClient.getPage(uid));
-        if (checkResponse.getStatus() == 200) {
-            Response updateResponse = safeInvoke(() -> openHabClient.updatePage(uid, jsonBody));
-            int updateStatus = updateResponse.getStatus();
-            if (updateStatus == 200) {
-                Log.infof("createComplexPage: updated '%s' HTTP %d", uid, updateStatus);
-                return new CreateOrUpdatePage(uid, CreateOrUpdateState.UPDATED);
-            } else {
-                throw new IllegalStateException("Error updating page '%s': HTTP %d".formatted(uid, updateStatus));
-            }
-        } else {
-            Response createResponse = safeInvoke(() -> openHabClient.createPage(jsonBody));
-            int status = createResponse.getStatus();
-            if (status == 200 || status == 201) {
-                Log.infof("createComplexPage: created '%s' HTTP %d", uid, status);
-                return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
-            } else {
-                throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
-            }
-        }
+        return upsertPage(uid, page, "createComplexPage");
     }
 
     @SneakyThrows
@@ -211,28 +225,7 @@ public class PageService {
             throw new IllegalArgumentException("YAML page definition must contain a 'uid' field");
         }
 
-        String jsonBody = jsonMapper.writeValueAsString(page);
-
-        Response checkResponse = safeInvoke(() -> openHabClient.getPage(uid));
-        if (checkResponse.getStatus() == 200) {
-            Response updateResponse = safeInvoke(() -> openHabClient.updatePage(uid, jsonBody));
-            int updateStatus = updateResponse.getStatus();
-            if (updateStatus == 200) {
-                Log.infof("createPageFromYaml: updated '%s' HTTP %d", uid, updateStatus);
-                return new CreateOrUpdatePage(uid, CreateOrUpdateState.UPDATED);
-            } else {
-                throw new IllegalStateException("Error updating page '%s': HTTP %d".formatted(uid, updateStatus));
-            }
-        } else {
-            Response createResponse = safeInvoke(() -> openHabClient.createPage(jsonBody));
-            int status = createResponse.getStatus();
-            if (status == 200 || status == 201) {
-                Log.infof("createPageFromYaml: created '%s' HTTP %d", uid, status);
-                return new CreateOrUpdatePage(uid, CreateOrUpdateState.CREATED);
-            } else {
-                throw new IllegalStateException("Error creating page '%s': HTTP %d".formatted(uid, status));
-            }
-        }
+        return upsertPage(uid, page, "createPageFromYaml");
     }
 
     public byte[] screenshotPage(String uid, String device) throws IOException {

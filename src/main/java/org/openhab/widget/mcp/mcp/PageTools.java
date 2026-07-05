@@ -66,15 +66,20 @@ public class PageTools {
             Both pageUid and label default to the widget UID. \
             A page should never created twice for the same widget. \
             Check before if there already a test page exist for this widget.""")
+    @WrapBusinessError
     public PageService.CreateOrUpdatePage createTestPageForWidget(
             @ToolArg(description = "UID of the widget to embed, e.g. Car_Charging") String widgetUid,
             @ToolArg(required = false, defaultValue = "", description = "Optional page label") String label,
             @ToolArg(required = false, defaultValue = "", description = "Optional page UID") String pageUid,
-            @ToolArg(required = false, defaultValue = "{}", description = "Optional widget props JSON, e.g. {\"title\":\"Auto\"}") String propsJson) {
+            @ToolArg(required = false, defaultValue = "{}", description = "Optional widget props JSON, e.g. {\"title\":\"Auto\"}") String propsJson,
+            @ToolArg(required = false, defaultValue = "canvas", description = "Page layout: "
+                    + "\"canvas\" (fixed absolute-pixel canvas, desktop/tablet-oriented) or "
+                    + "\"grid\" (responsive block/grid layout that reflows for narrow screens — "
+                    + "use for mobile/phone previews). Defaults to canvas.") String layout) {
         String resolvedPageUid = (pageUid == null || pageUid.isBlank()) ? widgetUid : pageUid;
         String resolvedLabel = (label == null || label.isBlank()) ? widgetUid : label;
         String resolvedProps = (propsJson == null || propsJson.isBlank()) ? "{}" : propsJson;
-        return pageService.createOrUpdatePage(resolvedPageUid, resolvedLabel, widgetUid, resolvedProps);
+        return pageService.createOrUpdatePage(resolvedPageUid, resolvedLabel, widgetUid, resolvedProps, layout);
     }
 
     @Tool(description = "Delete a page from OpenHAB by its UID.")

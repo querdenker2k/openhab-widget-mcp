@@ -26,10 +26,10 @@ public class PageResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Operation(summary = "Create or update a canvas page", description = "Creates a fixed canvas layout page (800x600) embedding the specified widget.")
     public Response createOrUpdatePage(PageRequest request) {
-        Log.infof("REST createOrUpdatePage: uid=%s, label=%s, widgetUid=%s", request.uid(), request.label(),
-                request.widgetUid());
+        Log.infof("REST createOrUpdatePage: uid=%s, label=%s, widgetUid=%s, layout=%s", request.uid(), request.label(),
+                request.widgetUid(), request.layout());
         PageService.CreateOrUpdatePage result = pageService.createOrUpdatePage(request.uid(), request.label(),
-                request.widgetUid(), request.propsJson() != null ? request.propsJson() : "{}");
+                request.widgetUid(), request.propsJson() != null ? request.propsJson() : "{}", request.layout());
         return Response.ok(Map.of("message", result)).build();
     }
 
@@ -43,14 +43,16 @@ public class PageResource {
             @Parameter(description = "Widget UID to embed, e.g. Car_Charging") @PathParam("uid") String widgetUid,
             @Parameter(description = "Page label shown in the sidebar (default: widget UID)") @QueryParam("label") String label,
             @Parameter(description = "Page UID (default: widget UID)") @QueryParam("pageUid") String pageUid,
-            @Parameter(description = "JSON object with widget props, e.g. {\"title\":\"Auto\"}. Default: {}") @QueryParam("propsJson") String propsJson) {
+            @Parameter(description = "JSON object with widget props, e.g. {\"title\":\"Auto\"}. Default: {}") @QueryParam("propsJson") String propsJson,
+            @Parameter(description = "Page layout: canvas (fixed absolute-pixel, default) or grid (responsive, "
+                    + "for mobile/phone previews).") @QueryParam("layout") String layout) {
         String resolvedPageUid = (pageUid == null || pageUid.isBlank()) ? widgetUid : pageUid;
         String resolvedLabel = (label == null || label.isBlank()) ? widgetUid : label;
         String resolvedProps = (propsJson == null || propsJson.isBlank()) ? "{}" : propsJson;
-        Log.infof("REST createTestPage: widgetUid=%s, pageUid=%s, label=%s, props=%s", widgetUid, resolvedPageUid,
-                resolvedLabel, resolvedProps);
+        Log.infof("REST createTestPage: widgetUid=%s, pageUid=%s, label=%s, props=%s, layout=%s", widgetUid,
+                resolvedPageUid, resolvedLabel, resolvedProps, layout);
         PageService.CreateOrUpdatePage message = pageService.createOrUpdatePage(resolvedPageUid, resolvedLabel,
-                widgetUid, resolvedProps);
+                widgetUid, resolvedProps, layout);
         String pageUrl = config.url() + "/page/" + resolvedPageUid;
         return Response.ok(Map.of("message", message, "pageUid", resolvedPageUid, "pageUrl", pageUrl)).build();
     }
@@ -76,6 +78,8 @@ public class PageResource {
     public record PageRequest(@Parameter(description = "Unique page ID, e.g. my_car_page") String uid,
             @Parameter(description = "Display label for the page") String label,
             @Parameter(description = "UID of the widget to embed") String widgetUid,
-            @Parameter(description = "JSON object with widget props, e.g. {\"title\": \"Auto\"}") String propsJson) {
+            @Parameter(description = "JSON object with widget props, e.g. {\"title\": \"Auto\"}") String propsJson,
+            @Parameter(description = "Page layout: canvas (fixed absolute-pixel, default) or grid (responsive, "
+                    + "for mobile/phone previews).") String layout) {
     }
 }

@@ -137,6 +137,56 @@ public class PageToolsTest {
         }
     }
 
+    @Test
+    void testCreateTestPageForWidget_gridLayout_producesResponsiveStructure() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+
+            client.when()
+                    .toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "layout", "grid"), response -> {
+                        Assertions.assertThat(response.isError()).isFalse();
+                        TextContent content = response.firstContent().asText();
+                        Assertions.assertThat(content.text()).isEqualTo("""
+                                {"uid":"%s","state":"%s"}""".formatted(PAGE_UID,
+                                PageService.CreateOrUpdateState.CREATED));
+                    }).thenAssertResults();
+
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", PAGE_UID), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                String yaml = response.firstContent().asText().text();
+                Assertions.assertThat(yaml).contains("oh-block", "oh-grid-row", "oh-grid-col");
+                Assertions.assertThat(yaml).doesNotContain("fixedType");
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
+    @SneakyThrows
+    @Test
+    void testScreenshotGridLayoutPage_matchesReference() {
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+
+            client.when().toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "layout", "grid"),
+                    response -> Assertions.assertThat(response.isError()).isFalse()).thenAssertResults();
+
+            client.when().toolsCall("screenshotPage", Map.of("uid", PAGE_UID, "device", "phone"), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                ImageContent content = (ImageContent) response.firstContent();
+                Assertions.assertThat(content.mimeType()).isEqualTo("image/png");
+                Assertions.assertThat(content.data()).isNotEmpty();
+
+                byte[] screenshot = Base64.getDecoder().decode(content.data());
+                try {
+                    ImageTestUtil.assertMatchesReference(screenshot, "page_" + PAGE_UID + "_grid.png");
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
     @SneakyThrows
     @Test
     void testScreenshotResponsivePage() {
