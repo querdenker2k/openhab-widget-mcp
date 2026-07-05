@@ -190,8 +190,11 @@ public class PageService {
     }
 
     @SneakyThrows
-    public CreateOrUpdatePage createComplexPage(String uid, String label, List<WidgetPlacement> placements) {
-        Log.infof("createComplexPage: uid=%s, label=%s, %d placements", uid, label, placements.size());
+    public CreateOrUpdatePage createComplexPage(String uid, String label, List<WidgetPlacement> placements,
+            String device) {
+        Log.infof("createComplexPage: uid=%s, label=%s, %d placements, device=%s", uid, label, placements.size(),
+                device);
+        OpenHabConfig.Dimension canvasSize = resolvePageCanvasDimension(device);
 
         List<Map<String, Object>> canvasItems = new ArrayList<>();
         for (WidgetPlacement p : placements) {
@@ -221,8 +224,7 @@ public class PageService {
         page.put("component", "oh-layout-page");
         page.put("config",
                 Map.of("label", label, "layoutType", "fixed", "fixedType", "canvas", "gridEnable", true, "screenWidth",
-                        config.page().width(), "screenHeight", config.page().height(), "scale", false, "sidebar",
-                        false));
+                        canvasSize.width(), "screenHeight", canvasSize.height(), "scale", false, "sidebar", false));
         page.put("tags", List.of());
         page.put("props", Map.of("parameters", List.of(), "parameterGroups", List.of()));
         page.put("slots",

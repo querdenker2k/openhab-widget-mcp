@@ -109,7 +109,7 @@ public class PageTools {
     @Tool(description = """
             Create or update an OpenHAB page with multiple widgets arranged on a canvas. \
             Accepts a JSON array of widget placements, each with widgetUid, x, y, w, h, \
-            and optional propsJson. Canvas size comes from server config (openhab.page-width/height). \
+            and optional propsJson. Canvas size comes from the chosen device preset. \
             Idempotent: calling again with the same pageUid updates the existing page.""")
     @WrapBusinessError
     public PageService.CreateOrUpdatePage createPage(
@@ -119,11 +119,14 @@ public class PageTools {
                     JSON array of widget placements. Each entry: \
                     widgetUid (required), x, y, w, h (all int, required), propsJson (optional). \
                     Example: [{"widgetUid":"car_widget","x":0,"y":0,"w":600,"h":400,"propsJson":"{}"},\
-                    {"widgetUid":"weather_widget","x":600,"y":0,"w":600,"h":400,"propsJson":"{}"}]""") String placementsJson) {
+                    {"widgetUid":"weather_widget","x":600,"y":0,"w":600,"h":400,"propsJson":"{}"}]""") String placementsJson,
+            @ToolArg(required = false, defaultValue = "desktop", description = "Target display size for the page's "
+                    + "canvas that all placement coordinates are relative to: \"desktop\" (default), \"tablet\", "
+                    + "or \"phone\". Pass the same value to screenshotPage's device argument to preview accurately.") String device) {
         List<PageService.WidgetPlacement> placements = new ObjectMapper().readValue(placementsJson,
                 new TypeReference<>() {
                 });
-        return pageService.createComplexPage(pageUid, label, placements);
+        return pageService.createComplexPage(pageUid, label, placements, device);
     }
 
     @Tool(description = """

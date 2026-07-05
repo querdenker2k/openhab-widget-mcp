@@ -303,13 +303,16 @@ public class WidgetPrompts {
 
             ## Step 3: Design the layout
 
-            The canvas has a fixed size defined by server config (shown in the
-            screenshotPage output dimensions). Typical sizes: 1200×800 (tablet/desktop).
+            Pick a target device for createPage's device argument: "desktop" (default,
+            server-configured size, shown in screenshotPage output dimensions), "tablet",
+            or "phone". All placement coordinates (x, y, w, h) must fit within that
+            device's canvas — check the dimensions via screenshotPage output if unsure.
 
             Assign each widget a position (x, y) and size (w, h):
             - No overlapping placements.
             - Match the size to the widget's natural size class (e.g. a small KPI card
-              needs ~300×200, a chart or composite card needs ~600×400).
+              needs ~300×200, a chart or composite card needs ~600×400) — scale these
+              down proportionally for "tablet"/"phone" canvases.
             - Group thematically related widgets spatially.
             - Leave breathing room — do not pack every pixel.
 
@@ -321,7 +324,8 @@ public class WidgetPrompts {
             If hints are empty, derive a sensible uid from the page description
             (snake_case, no spaces).
 
-            Call createPage(pageUid, label, placementsJson) with all placements.
+            Call createPage(pageUid, label, placementsJson, device) with all placements,
+            using the device chosen in Step 3.
 
             ## Step 5: Screenshot and verify
 

@@ -104,6 +104,31 @@ public class PageToolsTest {
         }
     }
 
+    @Test
+    void testCreateComplexPage_phoneDevice_setsPhoneSizedCanvas() {
+        String pageUid = "TestComplexPagePhone";
+        try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
+            WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
+
+            String placementsJson = """
+                    [{"widgetUid":"%s","x":0,"y":0,"w":100,"h":100,"propsJson":"{}"}]""".formatted(PAGE_UID);
+
+            client.when()
+                    .toolsCall("createPage",
+                            Map.of("pageUid", pageUid, "label", "Test Complex Page", "placementsJson", placementsJson,
+                                    "device", "phone"),
+                            response -> Assertions.assertThat(response.isError()).isFalse())
+                    .thenAssertResults();
+
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", pageUid), response -> {
+                Assertions.assertThat(response.isError()).isFalse();
+                String yaml = response.firstContent().asText().text();
+                Assertions.assertThat(yaml).contains("screenWidth: 390", "screenHeight: 844");
+            }).thenAssertResults();
+            client.disconnect();
+        }
+    }
+
     private static void createTestPageForWidget(McpAssured.McpStreamableTestClient client) {
         client.when().toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID), response -> {
             Assertions.assertThat(response.isError()).isFalse();
@@ -139,13 +164,17 @@ public class PageToolsTest {
 
     @Test
     void testCreateTestPageForWidget_canvasPhoneDevice_setsPhoneSizedCanvas() {
+        String pageUid = "TestWidgetPhoneCanvas";
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
             WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
 
-            client.when().toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "device", "phone"),
-                    response -> Assertions.assertThat(response.isError()).isFalse()).thenAssertResults();
+            client.when()
+                    .toolsCall("createTestPageForWidget",
+                            Map.of("widgetUid", PAGE_UID, "pageUid", pageUid, "device", "phone"),
+                            response -> Assertions.assertThat(response.isError()).isFalse())
+                    .thenAssertResults();
 
-            client.when().toolsCall("getPageAsYaml", Map.of("uid", PAGE_UID), response -> {
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", pageUid), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
                 String yaml = response.firstContent().asText().text();
                 Assertions.assertThat(yaml).contains("screenWidth: 390", "screenHeight: 844");
@@ -156,19 +185,20 @@ public class PageToolsTest {
 
     @Test
     void testCreateTestPageForWidget_gridLayout_producesResponsiveStructure() {
+        String pageUid = "TestWidgetGrid";
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
             WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
 
-            client.when()
-                    .toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "layout", "grid"), response -> {
+            client.when().toolsCall("createTestPageForWidget",
+                    Map.of("widgetUid", PAGE_UID, "pageUid", pageUid, "layout", "grid"), response -> {
                         Assertions.assertThat(response.isError()).isFalse();
                         TextContent content = response.firstContent().asText();
                         Assertions.assertThat(content.text()).isEqualTo("""
-                                {"uid":"%s","state":"%s"}""".formatted(PAGE_UID,
+                                {"uid":"%s","state":"%s"}""".formatted(pageUid,
                                 PageService.CreateOrUpdateState.CREATED));
                     }).thenAssertResults();
 
-            client.when().toolsCall("getPageAsYaml", Map.of("uid", PAGE_UID), response -> {
+            client.when().toolsCall("getPageAsYaml", Map.of("uid", pageUid), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
                 String yaml = response.firstContent().asText().text();
                 Assertions.assertThat(yaml).contains("oh-block", "oh-grid-row", "oh-grid-col");
@@ -181,13 +211,17 @@ public class PageToolsTest {
     @SneakyThrows
     @Test
     void testScreenshotGridLayoutPage_matchesReference() {
+        String pageUid = "TestWidgetGrid";
         try (McpAssured.McpStreamableTestClient client = McpAssured.newConnectedStreamableClient()) {
             WidgetToolsTest.createOrUpdateWidget(client, WidgetService.CreateOrUpdateState.CREATED);
 
-            client.when().toolsCall("createTestPageForWidget", Map.of("widgetUid", PAGE_UID, "layout", "grid"),
-                    response -> Assertions.assertThat(response.isError()).isFalse()).thenAssertResults();
+            client.when()
+                    .toolsCall("createTestPageForWidget",
+                            Map.of("widgetUid", PAGE_UID, "pageUid", pageUid, "layout", "grid"),
+                            response -> Assertions.assertThat(response.isError()).isFalse())
+                    .thenAssertResults();
 
-            client.when().toolsCall("screenshotPage", Map.of("uid", PAGE_UID, "device", "phone"), response -> {
+            client.when().toolsCall("screenshotPage", Map.of("uid", pageUid, "device", "phone"), response -> {
                 Assertions.assertThat(response.isError()).isFalse();
                 ImageContent content = (ImageContent) response.firstContent();
                 Assertions.assertThat(content.mimeType()).isEqualTo("image/png");
@@ -195,7 +229,7 @@ public class PageToolsTest {
 
                 byte[] screenshot = Base64.getDecoder().decode(content.data());
                 try {
-                    ImageTestUtil.assertMatchesReference(screenshot, "page_" + PAGE_UID + "_grid.png");
+                    ImageTestUtil.assertMatchesReference(screenshot, "page_" + pageUid + ".png");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
