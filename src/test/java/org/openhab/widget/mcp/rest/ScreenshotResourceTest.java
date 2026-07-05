@@ -142,11 +142,21 @@ class ScreenshotResourceTest {
     @TestFactory
     Stream<DynamicTest> screenshotPage_perDevice_matchesReference() {
         return Stream.of("desktop", "tablet", "phone").map(device -> DynamicTest.dynamicTest("device=" + device, () -> {
+            createPageForDevice(device);
             byte[] png = screenshotPage(device);
             assertValidPng(png);
             assertWidthWithinViewport(png, device);
             ImageTestUtil.assertMatchesReference(png, "page_" + PAGE_UID + "_" + device + ".png");
         }));
+    }
+
+    private static void createPageForDevice(String device) {
+        given().contentType("application/json")
+                .body("""
+                        {"uid":"%s","label":"Screenshot Test Page","widgetUid":"%s","propsJson":"{}","layout":"canvas","device":"%s"}
+                        """
+                        .formatted(PAGE_UID, WIDGET_UID, device))
+                .when().post("/api/pages").then().statusCode(200);
     }
 
     @Test
