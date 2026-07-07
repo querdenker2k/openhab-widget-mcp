@@ -3,9 +3,6 @@ openhab:
   api-token: ""
   username: ""
   password: ""
-  page:
-    width: 1280
-    height: 780
   desktop:
     width: 1920
     height: 1280

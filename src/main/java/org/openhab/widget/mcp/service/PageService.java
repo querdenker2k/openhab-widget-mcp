@@ -122,7 +122,7 @@ public class PageService {
      */
     private OpenHabConfig.Dimension resolvePageCanvasDimension(String device) {
         return switch (ViewportPreset.fromString(device)) {
-            case DESKTOP -> config.page();
+            case DESKTOP -> config.desktop();
             case TABLET -> config.tablet();
             case PHONE -> config.phone();
         };

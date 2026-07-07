@@ -21,8 +21,6 @@ public interface OpenHabConfig {
     @WithDefault("true")
     boolean headless();
 
-    Dimension page();
-
     Dimension desktop();
 
     Dimension tablet();
