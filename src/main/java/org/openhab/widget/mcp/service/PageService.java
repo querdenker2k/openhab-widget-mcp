@@ -12,7 +12,6 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -115,10 +114,9 @@ public class PageService {
     }
 
     /**
-     * Resolves the page canvas size for a device preset. "desktop" keeps using the
-     * dedicated {@code openhab.page} default (unrelated to the browser viewport
-     * used for screenshotting) for backward compatibility; "tablet"/"phone" reuse
-     * the same dimensions as {@link ViewportPreset}.
+     * Resolves the page canvas size for a device preset. All presets ("desktop",
+     * "tablet", "phone") reuse the same dimensions as the {@link ViewportPreset}
+     * browser viewport used for screenshotting.
      */
     private OpenHabConfig.Dimension resolvePageCanvasDimension(String device) {
         return switch (ViewportPreset.fromString(device)) {
@@ -246,7 +244,7 @@ public class PageService {
         return upsertPage(uid, page, "createPageFromYaml");
     }
 
-    public byte[] screenshotPage(String uid, String device) throws IOException {
+    public byte[] screenshotPage(String uid, String device) {
         synchronized (browserService) {
             Log.infof("screenshotPage: uid=%s, device=%s", uid, device);
             OpenHabConfig.Dimension viewport = ViewportPreset.fromString(device).dimension(config);
